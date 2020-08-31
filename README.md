@@ -39,11 +39,14 @@ If you want to specify another instance, you can set `LOCAL_EGA_INSTANCE_URL` en
 
 ```
 $ lega-commander
-lega-commander [files | resumables | upload] <args>
+lega-commander [inbox | outbox | resumables | upload | download] <args>
 
- files:
+ inbox:
   -l, --list    Lists uploaded files
   -d, --delete= Deletes uploaded file by name
+
+ outbox:
+  -l, --list  Lists exported files
 
  resumables:
   -l, --list    Lists resumable uploads
@@ -52,4 +55,7 @@ lega-commander [files | resumables | upload] <args>
  upload:
   -f, --file=FILE    File or folder to upload
   -r, --resume       Resumes interrupted upload
+
+ download:
+  -f, --file= File to download
 ```
