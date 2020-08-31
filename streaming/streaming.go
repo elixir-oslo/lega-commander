@@ -256,7 +256,7 @@ func (s defaultStreamer) Download(fileName string) error {
 	if !found {
 		return errors.New("File " + fileName + " not found in the outbox.")
 	}
-	file, err := os.Open(fileName)
+	file, err := os.Create(fileName)
 	if err != nil {
 		return err
 	}
