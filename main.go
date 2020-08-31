@@ -1,15 +1,15 @@
-// Package main is the main package of lega-uploader command-line tool, containing "files", "resumables" and "uploads"
+// Package main is the main package of lega-commander command-line tool, containing "files", "resumables" and "uploads"
 // commands implementations along with additional helper methods.
 package main
 
 import (
 	"bytes"
 	"fmt"
+	"github.com/elixir-oslo/lega-commander/files"
+	"github.com/elixir-oslo/lega-commander/resuming"
+	"github.com/elixir-oslo/lega-commander/uploading"
 	"github.com/jessevdk/go-flags"
 	"github.com/logrusorgru/aurora"
-	"github.com/uio-bmi/lega-uploader/files"
-	"github.com/uio-bmi/lega-uploader/resuming"
-	"github.com/uio-bmi/lega-uploader/uploading"
 	"log"
 	"os"
 	"strconv"
@@ -50,7 +50,7 @@ var uploadingOptions struct {
 var uploadingOptionsParser = flags.NewParser(&uploadingOptions, flags.None)
 
 const (
-	usageString        = "Usage:\n  lega-uploader\n"
+	usageString        = "Usage:\n  lega-commander\n"
 	applicationOptions = "Application Options"
 )
 
@@ -164,7 +164,7 @@ func main() {
 }
 
 func generateHelpMessage() string {
-	header := "lega-uploader [files | resumables | upload] <args>\n"
+	header := "lega-commander [files | resumables | upload] <args>\n"
 
 	buf := bytes.Buffer{}
 	filesOptionsParser.WriteHelp(&buf)

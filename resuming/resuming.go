@@ -4,8 +4,8 @@ package resuming
 import (
 	"errors"
 	"github.com/buger/jsonparser"
-	"github.com/uio-bmi/lega-uploader/conf"
-	"github.com/uio-bmi/lega-uploader/requests"
+	"github.com/elixir-oslo/lega-commander/conf"
+	"github.com/elixir-oslo/lega-commander/requests"
 	"io/ioutil"
 	"net/http"
 )

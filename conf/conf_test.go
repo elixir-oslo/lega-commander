@@ -72,7 +72,7 @@ func TestNewConfigurationDefaultChunkSize(t *testing.T) {
 }
 
 func TestNewConfigurationNonDefaultChunkSize(t *testing.T) {
-	_ = os.Setenv("LEGA_UPLOADER_CHUNK_SIZE", "100")
+	_ = os.Setenv("LEGA_COMMANDER_CHUNK_SIZE", "100")
 	configuration := NewConfiguration()
 	if configuration.GetChunkSize() != 100 {
 		t.Error()
@@ -80,7 +80,7 @@ func TestNewConfigurationNonDefaultChunkSize(t *testing.T) {
 }
 
 func TestNewConfigurationNonNumericChunkSize(t *testing.T) {
-	_ = os.Setenv("LEGA_UPLOADER_CHUNK_SIZE", "test")
+	_ = os.Setenv("LEGA_COMMANDER_CHUNK_SIZE", "test")
 	configuration := NewConfiguration()
 	if configuration.GetChunkSize() != defaultChunkSize {
 		t.Error()
@@ -92,5 +92,5 @@ func teardown() {
 	_ = os.Unsetenv("CENTRAL_EGA_PASSWORD")
 	_ = os.Unsetenv("LOCAL_EGA_INSTANCE_URL")
 	_ = os.Unsetenv("ELIXIR_AAI_TOKEN")
-	_ = os.Unsetenv("LEGA_UPLOADER_CHUNK_SIZE")
+	_ = os.Unsetenv("LEGA_COMMANDER_CHUNK_SIZE")
 }

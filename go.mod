@@ -8,5 +8,4 @@ require (
 	github.com/elixir-oslo/crypt4gh v0.0.2
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/logrusorgru/aurora v0.0.0-20200102142835-e9ef32dff381
-	github.com/uio-bmi/lega-uploader v1.1.3
 )

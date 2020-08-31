@@ -65,7 +65,7 @@ func (dc defaultConfiguration) GetElixirAAIToken() string {
 }
 
 func (dc defaultConfiguration) GetChunkSize() int {
-	chunkSize := os.Getenv("LEGA_UPLOADER_CHUNK_SIZE")
+	chunkSize := os.Getenv("LEGA_COMMANDER_CHUNK_SIZE")
 	if chunkSize == "" {
 		return defaultChunkSize
 	}

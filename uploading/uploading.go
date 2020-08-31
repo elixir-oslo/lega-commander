@@ -11,11 +11,11 @@ import (
 	"github.com/buger/jsonparser"
 	"github.com/cheggaaa/pb/v3"
 	"github.com/elixir-oslo/crypt4gh/model/headers"
+	"github.com/elixir-oslo/lega-commander/conf"
+	"github.com/elixir-oslo/lega-commander/files"
+	"github.com/elixir-oslo/lega-commander/requests"
+	"github.com/elixir-oslo/lega-commander/resuming"
 	"github.com/logrusorgru/aurora"
-	"github.com/uio-bmi/lega-uploader/conf"
-	"github.com/uio-bmi/lega-uploader/files"
-	"github.com/uio-bmi/lega-uploader/requests"
-	"github.com/uio-bmi/lega-uploader/resuming"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -123,7 +123,7 @@ func (u defaultUploader) uploadFile(file *os.File, stat os.FileInfo, uploadID *s
 	}
 	for _, uploadedFile := range *filesList {
 		if fileName == filepath.Base(uploadedFile.FileName) {
-			return errors.New("File " + file.Name() + " is already uploaded. Please, remove it from the Inbox first: lega-uploader files -d " + filepath.Base(uploadedFile.FileName))
+			return errors.New("File " + file.Name() + " is already uploaded. Please, remove it from the Inbox first: lega-commander files -d " + filepath.Base(uploadedFile.FileName))
 		}
 	}
 	if err = isCrypt4GHFile(file); err != nil {

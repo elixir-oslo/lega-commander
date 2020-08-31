@@ -1,7 +1,7 @@
 package resuming
 
 import (
-	"github.com/uio-bmi/lega-uploader/requests"
+	"github.com/elixir-oslo/lega-commander/requests"
 	"io"
 	"io/ioutil"
 	"net/http"

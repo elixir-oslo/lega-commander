@@ -2,10 +2,10 @@ package uploading
 
 import (
 	"fmt"
+	"github.com/elixir-oslo/lega-commander/files"
+	"github.com/elixir-oslo/lega-commander/requests"
+	"github.com/elixir-oslo/lega-commander/resuming"
 	"github.com/logrusorgru/aurora"
-	"github.com/uio-bmi/lega-uploader/files"
-	"github.com/uio-bmi/lega-uploader/requests"
-	"github.com/uio-bmi/lega-uploader/resuming"
 	"io"
 	"io/ioutil"
 	"log"
