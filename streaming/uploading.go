@@ -1,5 +1,5 @@
-// Package uploading contains structure and methods for uploading files towards LocalEGA instance.
-package uploading
+// Package streaming contains structure and methods for uploading and downloading files from LocalEGA instance.
+package streaming
 
 import (
 	"bytes"
@@ -25,50 +25,51 @@ import (
 	"strconv"
 )
 
-// Uploader interface provides methods for uploading files towards LocalEGA instance.
-type Uploader interface {
+// Streamer interface provides methods for uploading and downloading files from LocalEGA instance.
+type Streamer interface {
 	Upload(path string, resume bool) error
 	uploadFolder(folder *os.File, resume bool) error
 	uploadFile(file *os.File, stat os.FileInfo, uploadID *string, offset int64, startChunk int64) error
+	Download(fileName string) error
 }
 
-type defaultUploader struct {
+type defaultStreamer struct {
 	client            requests.Client
 	fileManager       files.FileManager
 	resumablesManager resuming.ResumablesManager
 }
 
-// NewUploader method constructs Uploader structure.
-func NewUploader(client *requests.Client, fileManager *files.FileManager, resumablesManager *resuming.ResumablesManager) (Uploader, error) {
-	uploader := defaultUploader{}
+// NewStreamer method constructs Streamer structure.
+func NewStreamer(client *requests.Client, fileManager *files.FileManager, resumablesManager *resuming.ResumablesManager) (Streamer, error) {
+	streamer := defaultStreamer{}
 	if client != nil {
-		uploader.client = *client
+		streamer.client = *client
 	} else {
-		uploader.client = requests.NewClient(nil)
+		streamer.client = requests.NewClient(nil)
 	}
 	if fileManager != nil {
-		uploader.fileManager = *fileManager
+		streamer.fileManager = *fileManager
 	} else {
-		newFileManager, err := files.NewFileManager(&uploader.client)
+		newFileManager, err := files.NewFileManager(&streamer.client)
 		if err != nil {
 			return nil, err
 		}
-		uploader.fileManager = newFileManager
+		streamer.fileManager = newFileManager
 	}
 	if resumablesManager != nil {
-		uploader.resumablesManager = *resumablesManager
+		streamer.resumablesManager = *resumablesManager
 	} else {
-		newResumablesManager, err := resuming.NewResumablesManager(&uploader.client)
+		newResumablesManager, err := resuming.NewResumablesManager(&streamer.client)
 		if err != nil {
 			return nil, err
 		}
-		uploader.resumablesManager = newResumablesManager
+		streamer.resumablesManager = newResumablesManager
 	}
-	return uploader, nil
+	return streamer, nil
 }
 
 // Upload method uploads file or folder to LocalEGA.
-func (u defaultUploader) Upload(path string, resume bool) error {
+func (s defaultStreamer) Upload(path string, resume bool) error {
 	file, err := os.Open(path)
 	if err != nil {
 		return err
@@ -79,25 +80,25 @@ func (u defaultUploader) Upload(path string, resume bool) error {
 		return err
 	}
 	if stat.IsDir() {
-		return u.uploadFolder(file, resume)
+		return s.uploadFolder(file, resume)
 	}
 	if resume {
 		fileName := filepath.Base(file.Name())
-		resumablesList, err := u.resumablesManager.ListResumables()
+		resumablesList, err := s.resumablesManager.ListResumables()
 		if err != nil {
 			return err
 		}
 		for _, resumable := range *resumablesList {
 			if resumable.Name == fileName {
-				return u.uploadFile(file, stat, &resumable.ID, resumable.Size, resumable.Chunk)
+				return s.uploadFile(file, stat, &resumable.ID, resumable.Size, resumable.Chunk)
 			}
 		}
 		return nil
 	}
-	return u.uploadFile(file, stat, nil, 0, 1)
+	return s.uploadFile(file, stat, nil, 0, 1)
 }
 
-func (u defaultUploader) uploadFolder(folder *os.File, resume bool) error {
+func (s defaultStreamer) uploadFolder(folder *os.File, resume bool) error {
 	readdir, err := folder.Readdir(-1)
 	if err != nil {
 		return err
@@ -107,7 +108,7 @@ func (u defaultUploader) uploadFolder(folder *os.File, resume bool) error {
 		if err != nil {
 			return err
 		}
-		err = u.Upload(abs, resume)
+		err = s.Upload(abs, resume)
 		if err != nil {
 			return err
 		}
@@ -115,9 +116,9 @@ func (u defaultUploader) uploadFolder(folder *os.File, resume bool) error {
 	return nil
 }
 
-func (u defaultUploader) uploadFile(file *os.File, stat os.FileInfo, uploadID *string, offset, startChunk int64) error {
+func (s defaultStreamer) uploadFile(file *os.File, stat os.FileInfo, uploadID *string, offset, startChunk int64) error {
 	fileName := filepath.Base(file.Name())
-	filesList, err := u.fileManager.ListFiles()
+	filesList, err := s.fileManager.ListFiles(true)
 	if err != nil {
 		return err
 	}
@@ -156,7 +157,7 @@ func (u defaultUploader) uploadFile(file *os.File, stat os.FileInfo, uploadID *s
 		if i != 1 {
 			params["uploadId"] = *uploadID
 		}
-		response, err := u.client.DoRequest(http.MethodPatch,
+		response, err := s.client.DoRequest(http.MethodPatch,
 			configuration.GetLocalEGAInstanceURL()+"/stream/"+url.QueryEscape(fileName),
 			bytes.NewReader(chunk),
 			map[string]string{"Proxy-Authorization": "Bearer " + configuration.GetElixirAAIToken()},
@@ -193,7 +194,7 @@ func (u defaultUploader) uploadFile(file *os.File, stat os.FileInfo, uploadID *s
 		return err
 	}
 	checksum := hex.EncodeToString(hashFunction.Sum(nil))
-	response, err := u.client.DoRequest(http.MethodPatch,
+	response, err := s.client.DoRequest(http.MethodPatch,
 		configuration.GetLocalEGAInstanceURL()+"/stream/"+url.QueryEscape(fileName),
 		nil,
 		map[string]string{"Proxy-Authorization": "Bearer " + configuration.GetElixirAAIToken()},
@@ -232,4 +233,60 @@ func isCrypt4GHFile(file *os.File) error {
 	}
 	*file = *reopenedFile
 	return err
+}
+
+// Download method downloads file from LocalEGA.
+func (s defaultStreamer) Download(fileName string) error {
+	if fileExists(fileName) {
+		return errors.New("File " + fileName + " exists locally, aborting.")
+	}
+	filesList, err := s.fileManager.ListFiles(false)
+	if err != nil {
+		return err
+	}
+	found := false
+	fileSize := int64(0)
+	for _, exportedFile := range *filesList {
+		if fileName == filepath.Base(exportedFile.FileName) {
+			found = true
+			fileSize = exportedFile.Size
+			break
+		}
+	}
+	if !found {
+		return errors.New("File " + fileName + " not found in the outbox.")
+	}
+	file, err := os.Open(fileName)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	fmt.Println(aurora.Blue("Downloading file: " + file.Name() + " (" + strconv.FormatInt(fileSize, 10) + " bytes)"))
+	bar := pb.Start64(fileSize)
+	configuration := conf.NewConfiguration()
+	response, err := s.client.DoRequest(http.MethodGet,
+		configuration.GetLocalEGAInstanceURL()+"/stream/"+url.QueryEscape(fileName),
+		nil,
+		map[string]string{"Proxy-Authorization": "Bearer " + configuration.GetElixirAAIToken()},
+		map[string]string{"fileName": fileName},
+		configuration.GetCentralEGAUsername(),
+		configuration.GetCentralEGAPassword())
+	if err != nil {
+		return err
+	}
+	if response.StatusCode != 200 {
+		return errors.New(response.Status)
+	}
+	barReader := bar.NewProxyReader(response.Body)
+	defer barReader.Close()
+	_, err = io.Copy(file, barReader)
+	return err
+}
+
+func fileExists(fileName string) bool {
+	info, err := os.Stat(fileName)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
 }

@@ -1,4 +1,4 @@
-package uploading
+package streaming
 
 import (
 	"fmt"
@@ -15,7 +15,7 @@ import (
 	"testing"
 )
 
-var uploader Uploader
+var uploader Streamer
 var dir string
 var file *os.File
 var existingFile *os.File
@@ -42,7 +42,7 @@ func setup() {
 	if err != nil {
 		log.Fatal(aurora.Red(err))
 	}
-	uploader, err = NewUploader(&client, &filesManager, &resumablesManager)
+	uploader, err = NewStreamer(&client, &filesManager, &resumablesManager)
 	if err != nil {
 		log.Fatal(aurora.Red(err))
 	}

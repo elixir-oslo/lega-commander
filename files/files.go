@@ -8,6 +8,7 @@ import (
 	"github.com/elixir-oslo/lega-commander/requests"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 )
 
 // File structure represents uploaded File.
@@ -19,7 +20,7 @@ type File struct {
 
 // FileManager interface provides method for managing uploaded files.
 type FileManager interface {
-	ListFiles() (*[]File, error)
+	ListFiles(inbox bool) (*[]File, error)
 	DeleteFile(fileName string) error
 }
 
@@ -39,13 +40,13 @@ func NewFileManager(client *requests.Client) (FileManager, error) {
 }
 
 // ListFiles method lists uploaded files.
-func (rm defaultFileManager) ListFiles() (*[]File, error) {
+func (rm defaultFileManager) ListFiles(inbox bool) (*[]File, error) {
 	configuration := conf.NewConfiguration()
 	response, err := rm.client.DoRequest(http.MethodGet,
 		configuration.GetLocalEGAInstanceURL()+"/files",
 		nil,
 		map[string]string{"Proxy-Authorization": "Bearer " + configuration.GetElixirAAIToken()},
-		nil,
+		map[string]string{"inbox": strconv.FormatBool(inbox)},
 		configuration.GetCentralEGAUsername(),
 		configuration.GetCentralEGAPassword())
 	if err != nil {

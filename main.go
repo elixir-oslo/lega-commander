@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"github.com/elixir-oslo/lega-commander/files"
 	"github.com/elixir-oslo/lega-commander/resuming"
-	"github.com/elixir-oslo/lega-commander/uploading"
+	"github.com/elixir-oslo/lega-commander/streaming"
 	"github.com/jessevdk/go-flags"
 	"github.com/logrusorgru/aurora"
 	"log"
@@ -23,17 +23,25 @@ var (
 )
 
 const (
-	filesCommand      = "files"
+	inboxCommand      = "inbox"
+	outboxCommand     = "outbox"
 	resumablesCommand = "resumables"
 	uploadCommand     = "upload"
+	downloadCommand   = "download"
 )
 
-var filesOptions struct {
+var inboxOptions struct {
 	List   bool   `short:"l" long:"list" description:"Lists uploaded files"`
 	Delete string `short:"d" long:"delete" description:"Deletes uploaded file by name"`
 }
 
-var filesOptionsParser = flags.NewParser(&filesOptions, flags.None)
+var inboxOptionsParser = flags.NewParser(&inboxOptions, flags.None)
+
+var outboxOptions struct {
+	List bool `short:"l" long:"list" description:"Lists exported files"`
+}
+
+var outboxOptionsParser = flags.NewParser(&outboxOptions, flags.None)
 
 var resumablesOptions struct {
 	List   bool   `short:"l" long:"list" description:"Lists resumable uploads"`
@@ -48,6 +56,12 @@ var uploadingOptions struct {
 }
 
 var uploadingOptionsParser = flags.NewParser(&uploadingOptions, flags.None)
+
+var downloadingOptions struct {
+	FileName string `short:"f"  long:"file" description:"File to download" required:"true"`
+}
+
+var downloadingOptionsParser = flags.NewParser(&downloadingOptions, flags.None)
 
 const (
 	usageString        = "Usage:\n  lega-commander\n"
@@ -67,8 +81,8 @@ func main() {
 	}
 	commandName := args[1]
 	switch commandName {
-	case filesCommand:
-		_, err := filesOptionsParser.Parse()
+	case inboxCommand:
+		_, err := inboxOptionsParser.Parse()
 		if err != nil {
 			log.Fatal(aurora.Red(err))
 		}
@@ -76,8 +90,8 @@ func main() {
 		if err != nil {
 			log.Fatal(aurora.Red(err))
 		}
-		if filesOptions.List {
-			fileList, err := fileManager.ListFiles()
+		if inboxOptions.List {
+			fileList, err := fileManager.ListFiles(true)
 			if err != nil {
 				log.Fatal(aurora.Red(err))
 			}
@@ -96,8 +110,47 @@ func main() {
 			if err != nil {
 				log.Fatal(aurora.Red(err))
 			}
-		} else if filesOptions.Delete != "" {
-			err = fileManager.DeleteFile(filesOptions.Delete)
+		} else if inboxOptions.Delete != "" {
+			err = fileManager.DeleteFile(inboxOptions.Delete)
+			if err != nil {
+				log.Fatal(aurora.Red(err))
+			} else {
+				fmt.Println(aurora.Green("Success"))
+			}
+		} else {
+			log.Fatal(aurora.Red("none of the flags are selected"))
+		}
+	case outboxCommand:
+		_, err := inboxOptionsParser.Parse()
+		if err != nil {
+			log.Fatal(aurora.Red(err))
+		}
+		fileManager, err := files.NewFileManager(nil)
+		if err != nil {
+			log.Fatal(aurora.Red(err))
+		}
+		if inboxOptions.List {
+			fileList, err := fileManager.ListFiles(false)
+			if err != nil {
+				log.Fatal(aurora.Red(err))
+			}
+			tw := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', tabwriter.TabIndent)
+			_, err = fmt.Fprintln(tw, aurora.Blue("File name\t File size"))
+			if err != nil {
+				log.Fatal(aurora.Red(err))
+			}
+			for _, file := range *fileList {
+				_, err = fmt.Fprintln(tw, aurora.Blue(file.FileName+"\t "+strconv.FormatInt(file.Size, 10)+" bytes"))
+				if err != nil {
+					log.Fatal(aurora.Red(err))
+				}
+			}
+			err = tw.Flush()
+			if err != nil {
+				log.Fatal(aurora.Red(err))
+			}
+		} else if inboxOptions.Delete != "" {
+			err = fileManager.DeleteFile(inboxOptions.Delete)
 			if err != nil {
 				log.Fatal(aurora.Red(err))
 			} else {
@@ -150,11 +203,24 @@ func main() {
 		if err != nil {
 			log.Fatal(aurora.Red(err))
 		}
-		uploader, err := uploading.NewUploader(nil, nil, nil)
+		streamer, err := streaming.NewStreamer(nil, nil, nil)
 		if err != nil {
 			log.Fatal(aurora.Red(err))
 		}
-		err = uploader.Upload(uploadingOptions.FileName, uploadingOptions.Resume)
+		err = streamer.Upload(uploadingOptions.FileName, uploadingOptions.Resume)
+		if err != nil {
+			log.Fatal(aurora.Red(err))
+		}
+	case downloadCommand:
+		_, err := downloadingOptionsParser.Parse()
+		if err != nil {
+			log.Fatal(aurora.Red(err))
+		}
+		streamer, err := streaming.NewStreamer(nil, nil, nil)
+		if err != nil {
+			log.Fatal(aurora.Red(err))
+		}
+		err = streamer.Download(downloadingOptions.FileName)
 		if err != nil {
 			log.Fatal(aurora.Red(err))
 		}
@@ -164,13 +230,19 @@ func main() {
 }
 
 func generateHelpMessage() string {
-	header := "lega-commander [files | resumables | upload] <args>\n"
+	header := "lega-commander [inbox | outbox | resumables | upload | download] <args>\n"
 
 	buf := bytes.Buffer{}
-	filesOptionsParser.WriteHelp(&buf)
-	filesUsage := buf.String()
-	filesUsage = strings.Replace(filesUsage, usageString, "", 1)
-	filesUsage = strings.Replace(filesUsage, applicationOptions, " "+filesCommand, 1)
+	inboxOptionsParser.WriteHelp(&buf)
+	inboxUsage := buf.String()
+	inboxUsage = strings.Replace(inboxUsage, usageString, "", 1)
+	inboxUsage = strings.Replace(inboxUsage, applicationOptions, " "+inboxCommand, 1)
+
+	buf.Reset()
+	outboxOptionsParser.WriteHelp(&buf)
+	outboxUsage := buf.String()
+	outboxUsage = strings.Replace(outboxUsage, usageString, "", 1)
+	outboxUsage = strings.Replace(outboxUsage, applicationOptions, " "+outboxCommand, 1)
 
 	buf.Reset()
 	resumablesOptionsParser.WriteHelp(&buf)
@@ -184,5 +256,11 @@ func generateHelpMessage() string {
 	uploadingUsage = strings.Replace(uploadingUsage, usageString, "", 1)
 	uploadingUsage = strings.Replace(uploadingUsage, applicationOptions, " "+uploadCommand, 1)
 
-	return header + filesUsage + resumablesUsage + uploadingUsage
+	buf.Reset()
+	downloadingOptionsParser.WriteHelp(&buf)
+	downloadingUsage := buf.String()
+	downloadingUsage = strings.Replace(downloadingUsage, usageString, "", 1)
+	downloadingUsage = strings.Replace(downloadingUsage, applicationOptions, " "+downloadCommand, 1)
+
+	return header + inboxUsage + outboxUsage + resumablesUsage + uploadingUsage + downloadingUsage
 }

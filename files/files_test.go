@@ -41,7 +41,7 @@ func TestListFiles(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	fileList, err := fileManager.ListFiles()
+	fileList, err := fileManager.ListFiles(true)
 	if err != nil {
 		t.Error(err)
 	}
