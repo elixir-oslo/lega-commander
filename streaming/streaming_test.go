@@ -2,6 +2,7 @@ package streaming
 
 import (
 	"fmt"
+	"github.com/chzyer/test"
 	"github.com/elixir-oslo/lega-commander/files"
 	"github.com/elixir-oslo/lega-commander/requests"
 	"github.com/elixir-oslo/lega-commander/resuming"
@@ -60,7 +61,7 @@ func setup() {
 type mockClient struct {
 }
 
-func (mockClient) DoRequest(_, url string, _ io.Reader, headers, params map[string]string, username, password string) (*http.Response, error) {
+func (mockClient) DoRequest(method, url string, _ io.Reader, headers, params map[string]string, username, password string) (*http.Response, error) {
 	var response http.Response
 	if username != "user" || password != "pass" || !strings.HasPrefix(headers["Proxy-Authorization"], "Bearer ") {
 		body := ioutil.NopCloser(strings.NewReader(""))
@@ -68,42 +69,54 @@ func (mockClient) DoRequest(_, url string, _ io.Reader, headers, params map[stri
 		return &response, nil
 	}
 	if strings.HasSuffix(url, "/files") {
-		body := ioutil.NopCloser(strings.NewReader(`{"files": [{"fileName": "test.enc", "size": 100, "modifiedDate": "2010"}]}`))
+		var body io.ReadCloser
+		if params["inbox"] == "" || params["inbox"] == "true" {
+			body = ioutil.NopCloser(strings.NewReader(`{"files": [{"fileName": "test.enc", "size": 100, "modifiedDate": "2010"}]}`))
+		} else {
+			body = ioutil.NopCloser(strings.NewReader(`{"files": [{"fileName": "test2.enc", "size": 100, "modifiedDate": "2010"}]}`))
+		}
 		response := http.Response{StatusCode: 200, Body: body}
 		return &response, nil
 	}
 	if strings.Contains(url, "/stream") {
-		var id string
-		var ok bool
-		id, ok = params["id"]
-		if !ok {
-			id = "123"
-		}
-		if id != "123" {
-			body := ioutil.NopCloser(strings.NewReader(""))
-			response = http.Response{StatusCode: 500, Body: body}
+		if method == http.MethodPatch {
+			var id string
+			var ok bool
+			id, ok = params["id"]
+			if !ok {
+				id = "123"
+			}
+			if id != "123" {
+				body := ioutil.NopCloser(strings.NewReader(""))
+				response = http.Response{StatusCode: 500, Body: body}
+				return &response, nil
+			}
+			chunk := params["chunk"]
+			if chunk == "1" {
+				checksum := params["md5"]
+				if checksum != "da385d93ae510bc91c9c8af7e670ac6f" {
+					body := ioutil.NopCloser(strings.NewReader(""))
+					response = http.Response{StatusCode: 500, Body: body}
+					return &response, nil
+				}
+			} else if chunk == "end" {
+				checksum := params["sha256"]
+				fileSize := params["fileSize"]
+				if checksum != "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" || fileSize != "65688" {
+					body := ioutil.NopCloser(strings.NewReader(""))
+					response = http.Response{StatusCode: 500, Body: body}
+					return &response, nil
+				}
+			}
+			body := ioutil.NopCloser(strings.NewReader(fmt.Sprintf(`{"id":"%s"}`, id)))
+			response = http.Response{StatusCode: 200, Body: body}
 			return &response, nil
 		}
-		chunk := params["chunk"]
-		if chunk == "1" {
-			checksum := params["md5"]
-			if checksum != "da385d93ae510bc91c9c8af7e670ac6f" {
-				body := ioutil.NopCloser(strings.NewReader(""))
-				response = http.Response{StatusCode: 500, Body: body}
-				return &response, nil
-			}
-		} else if chunk == "end" {
-			checksum := params["sha256"]
-			fileSize := params["fileSize"]
-			if checksum != "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" || fileSize != "65688" {
-				body := ioutil.NopCloser(strings.NewReader(""))
-				response = http.Response{StatusCode: 500, Body: body}
-				return &response, nil
-			}
+		if method == http.MethodGet {
+			body := ioutil.NopCloser(strings.NewReader("test"))
+			response = http.Response{StatusCode: 200, Body: body}
+			return &response, nil
 		}
-		body := ioutil.NopCloser(strings.NewReader(fmt.Sprintf(`{"id":"%s"}`, id)))
-		response = http.Response{StatusCode: 200, Body: body}
-		return &response, nil
 	}
 	return nil, nil
 }
@@ -125,6 +138,48 @@ func TestUploadFile(t *testing.T) {
 func TestUploadFolder(t *testing.T) {
 	err := uploader.Upload(dir, false)
 	if err == nil || !strings.HasSuffix(err.Error(), "not a Crypt4GH file") {
+		t.Error(err)
+	}
+}
+
+func TestDownloadFileRemoteDoesntExist(t *testing.T) {
+	err := uploader.Download("test.enc")
+	if err == nil || !strings.HasSuffix(err.Error(), "not found in the outbox.") {
+		t.Error(err)
+	}
+}
+
+func TestDownloadFileRemoteExists(t *testing.T) {
+	err := uploader.Download("test2.enc")
+	if err != nil {
+		t.Error(err)
+	}
+	file, err := os.Open("test2.enc")
+	if err != nil {
+		t.Error(err)
+	}
+	test.ReadString(file, "test")
+	err = file.Close()
+	if err != nil {
+		t.Error(err)
+	}
+	err = os.Remove("test2.enc")
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestDownloadFileLocalExists(t *testing.T) {
+	_, err := os.Create("test2.enc")
+	if err != nil {
+		t.Error(err)
+	}
+	err = uploader.Download("test2.enc")
+	if err == nil || !strings.HasSuffix(err.Error(), "exists locally, aborting.") {
+		t.Error(err)
+	}
+	err = os.Remove("test2.enc")
+	if err != nil {
 		t.Error(err)
 	}
 }
