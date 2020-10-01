@@ -43,7 +43,9 @@ func (c defaultClient) DoRequest(method string, url string, body io.Reader, head
 		request.URL.RawQuery = query.Encode()
 	}
 
-	request.SetBasicAuth(username, password)
+	if username != "" && password != "" {
+		request.SetBasicAuth(username, password)
+	}
 
 	return c.client.Do(request)
 }

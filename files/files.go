@@ -42,13 +42,18 @@ func NewFileManager(client *requests.Client) (FileManager, error) {
 // ListFiles method lists uploaded files.
 func (rm defaultFileManager) ListFiles(inbox bool) (*[]File, error) {
 	configuration := conf.NewConfiguration()
+	username, password := "", ""
+	if inbox {
+		username = configuration.GetCentralEGAUsername()
+		password = configuration.GetCentralEGAPassword()
+	}
 	response, err := rm.client.DoRequest(http.MethodGet,
 		configuration.GetLocalEGAInstanceURL()+"/files",
 		nil,
 		map[string]string{"Proxy-Authorization": "Bearer " + configuration.GetElixirAAIToken()},
 		map[string]string{"inbox": strconv.FormatBool(inbox)},
-		configuration.GetCentralEGAUsername(),
-		configuration.GetCentralEGAPassword())
+		username,
+		password)
 	if err != nil {
 		return nil, err
 	}

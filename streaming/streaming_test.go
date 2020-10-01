@@ -63,7 +63,7 @@ type mockClient struct {
 
 func (mockClient) DoRequest(method, url string, _ io.Reader, headers, params map[string]string, username, password string) (*http.Response, error) {
 	var response http.Response
-	if username != "user" || password != "pass" || !strings.HasPrefix(headers["Proxy-Authorization"], "Bearer ") {
+	if !strings.HasPrefix(headers["Proxy-Authorization"], "Bearer ") {
 		body := ioutil.NopCloser(strings.NewReader(""))
 		response = http.Response{StatusCode: 401, Body: body}
 		return &response, nil

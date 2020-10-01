@@ -269,8 +269,8 @@ func (s defaultStreamer) Download(fileName string) error {
 		nil,
 		map[string]string{"Proxy-Authorization": "Bearer " + configuration.GetElixirAAIToken()},
 		map[string]string{"fileName": fileName},
-		configuration.GetCentralEGAUsername(),
-		configuration.GetCentralEGAPassword())
+		"",
+		"")
 	if err != nil {
 		return err
 	}
