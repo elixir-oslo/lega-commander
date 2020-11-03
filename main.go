@@ -58,7 +58,7 @@ var uploadingOptions struct {
 var uploadingOptionsParser = flags.NewParser(&uploadingOptions, flags.None)
 
 var downloadingOptions struct {
-	FileName string `short:"f"  long:"file" description:"File to download" required:"true"`
+	FileName string `short:"f"  long:"file" description:"File to download\t[optional]"`
 }
 
 var downloadingOptionsParser = flags.NewParser(&downloadingOptions, flags.None)
@@ -79,14 +79,14 @@ func main() {
 		fmt.Println(aurora.Yellow(date))
 		os.Exit(0)
 	}
+	fileManager, err := files.NewFileManager(nil)
+	if err != nil {
+		log.Fatal(aurora.Red(err))
+	}
 	commandName := args[1]
 	switch commandName {
 	case inboxCommand:
 		_, err := inboxOptionsParser.Parse()
-		if err != nil {
-			log.Fatal(aurora.Red(err))
-		}
-		fileManager, err := files.NewFileManager(nil)
 		if err != nil {
 			log.Fatal(aurora.Red(err))
 		}
@@ -122,10 +122,6 @@ func main() {
 		}
 	case outboxCommand:
 		_, err := inboxOptionsParser.Parse()
-		if err != nil {
-			log.Fatal(aurora.Red(err))
-		}
-		fileManager, err := files.NewFileManager(nil)
 		if err != nil {
 			log.Fatal(aurora.Red(err))
 		}
@@ -220,9 +216,23 @@ func main() {
 		if err != nil {
 			log.Fatal(aurora.Red(err))
 		}
-		err = streamer.Download(downloadingOptions.FileName)
-		if err != nil {
-			log.Fatal(aurora.Red(err))
+		if downloadingOptions.FileName == "" {
+			fmt.Println(aurora.Blue("File to export is not specified. Downloading the whole outbox folder."))
+			fileList, err := fileManager.ListFiles(false)
+			if err != nil {
+				log.Fatal(aurora.Red(err))
+			}
+			for _, file := range *fileList {
+				err = streamer.Download(file.FileName)
+				if err != nil {
+					log.Fatal(aurora.Red(err))
+				}
+			}
+		} else {
+			err = streamer.Download(downloadingOptions.FileName)
+			if err != nil {
+				log.Fatal(aurora.Red(err))
+			}
 		}
 	default:
 		log.Fatal(aurora.Red(fmt.Sprintf("command '%v' is not recognized", commandName)))
