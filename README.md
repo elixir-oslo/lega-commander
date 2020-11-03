@@ -4,7 +4,7 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/elixir-oslo/lega-commander/badge)](https://www.codefactor.io/repository/github/elixir-oslo/lega-commander)
 [![Go Report Card](https://goreportcard.com/badge/github.com/elixir-oslo/lega-commander)](https://goreportcard.com/report/github.com/elixir-oslo/lega-commander)
 [![codecov](https://codecov.io/gh/elixir-oslo/lega-commander/branch/master/graph/badge.svg)](https://codecov.io/gh/elixir-oslo/lega-commander)
-[![DeepSource](https://static.deepsource.io/deepsource-badge-light.svg)](https://deepsource.io/gh/elixir-oslo/lega-commander/?ref=repository-badge)
+[![DeepSource](https://deepsource.io/gh/elixir-oslo/lega-commander.svg/?label=active+issues&show_trend=true)](https://deepsource.io/gh/elixir-oslo/lega-commander/?ref=repository-badge)
 
 ## Installation / Update
 
