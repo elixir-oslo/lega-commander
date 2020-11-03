@@ -27,7 +27,7 @@ func NewClient(client *http.Client) Client {
 }
 
 // DoRequest method can perform different HTTP requests with different parameters towards LocalEGA instance.
-func (c defaultClient) DoRequest(method string, url string, body io.Reader, headers map[string]string, params map[string]string, username string, password string) (*http.Response, error) {
+func (c defaultClient) DoRequest(method, url string, body io.Reader, headers, params map[string]string, username, password string) (*http.Response, error) {
 	request, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return nil, err
