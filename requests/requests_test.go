@@ -2,7 +2,6 @@ package requests
 
 import (
 	"encoding/json"
-	"github.com/logrusorgru/aurora"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -10,6 +9,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	aurora "github.com/logrusorgru/aurora/v3"
 )
 
 var server *httptest.Server
