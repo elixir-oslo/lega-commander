@@ -3,19 +3,10 @@ package streaming
 
 import (
 	"bytes"
-	"crypto/md5"
 	"crypto/sha256"
-	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/buger/jsonparser"
-	"github.com/cheggaaa/pb/v3"
-	"github.com/elixir-oslo/crypt4gh/model/headers"
-	"github.com/elixir-oslo/lega-commander/conf"
-	"github.com/elixir-oslo/lega-commander/files"
-	"github.com/elixir-oslo/lega-commander/requests"
-	"github.com/elixir-oslo/lega-commander/resuming"
-	"github.com/logrusorgru/aurora"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -23,6 +14,18 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"time"
+
+	"github.com/beevik/ntp"
+	"github.com/buger/jsonparser"
+	"github.com/cheggaaa/pb/v3"
+	"github.com/elixir-oslo/crypt4gh/model/headers"
+	"github.com/elixir-oslo/lega-commander/conf"
+	"github.com/elixir-oslo/lega-commander/files"
+	"github.com/elixir-oslo/lega-commander/requests"
+	"github.com/elixir-oslo/lega-commander/resuming"
+	"github.com/golang-jwt/jwt"
+	aurora "github.com/logrusorgru/aurora/v3"
 )
 
 // Streamer interface provides methods for uploading and downloading files from LocalEGA instance.
@@ -37,6 +40,12 @@ type defaultStreamer struct {
 	client            requests.Client
 	fileManager       files.FileManager
 	resumablesManager resuming.ResumablesManager
+}
+type ResponseJson struct {
+	// defining token response that comes from tsd proxy
+	StatusCode int    `json:"statusCode"`
+	StatusText string `json:"statusText"`
+	Token      string `json:"token"`
 }
 
 // NewStreamer method constructs Streamer structure.
@@ -127,6 +136,16 @@ func (s defaultStreamer) uploadFile(file *os.File, stat os.FileInfo, uploadID *s
 			return errors.New("File " + file.Name() + " is already uploaded. Please, remove it from the Inbox first: lega-commander files -d " + filepath.Base(uploadedFile.FileName))
 		}
 	}
+	configuration := conf.NewConfiguration()
+	tsd_token, claims, err := s.findTSDtoken(configuration)
+	if err != nil {
+		return err
+	}
+	streamurl := configuration.ConcatenateURLPartsToString(
+		[]string{
+			configuration.GetTSDURL(), claims["user"].(string), "files", url.QueryEscape(fileName),
+		},
+	)
 	if err = isCrypt4GHFile(file); err != nil {
 		return err
 	}
@@ -135,7 +154,7 @@ func (s defaultStreamer) uploadFile(file *os.File, stat os.FileInfo, uploadID *s
 	bar := pb.StartNew(100)
 	bar.SetCurrent(offset * 100 / totalSize)
 	bar.Start()
-	configuration := conf.NewConfiguration()
+
 	_, err = file.Seek(offset, 0)
 	if err != nil {
 		return err
@@ -150,24 +169,38 @@ func (s defaultStreamer) uploadFile(file *os.File, stat os.FileInfo, uploadID *s
 			break
 		}
 		chunk := buffer[:read]
-		sum := md5.Sum(chunk)
-		params := map[string]string{
-			"chunk": strconv.FormatInt(i, 10),
-			"md5":   hex.EncodeToString(sum[:16])}
-		if i != 1 {
-			params["uploadId"] = *uploadID
-		}
-		response, err := s.client.DoRequest(http.MethodPatch,
-			configuration.GetLocalEGAInstanceURL()+"/stream/"+url.QueryEscape(fileName),
-			bytes.NewReader(chunk),
-			map[string]string{"Proxy-Authorization": "Bearer " + configuration.GetElixirAAIToken()},
-			params,
-			configuration.GetCentralEGAUsername(),
-			configuration.GetCentralEGAPassword())
+		TokenIsExpired, err := s.CheckTSDTokenIsExpired(configuration, claims["exp"].(float64))
 		if err != nil {
 			return err
 		}
-		if response.StatusCode != 200 {
+		if TokenIsExpired {
+			tsd_token, claims, err = s.findTSDtoken(configuration)
+		}
+		if err != nil {
+			return err
+		}
+		var response *http.Response
+		if i != 1 {
+			response, err = s.client.DoRequest(http.MethodPatch,
+				streamurl,
+				bytes.NewReader(chunk),
+				map[string]string{"Authorization": "Bearer " + tsd_token},
+				map[string]string{"id": *uploadID, "chunk": strconv.FormatInt(i, 10)},
+				"",
+				"")
+		} else {
+			response, err = s.client.DoRequest(http.MethodPatch,
+				streamurl,
+				bytes.NewReader(chunk),
+				map[string]string{"Authorization": "Bearer " + tsd_token},
+				map[string]string{"chunk": "1"},
+				"",
+				"")
+		}
+		if err != nil {
+			return err
+		}
+		if !(response.StatusCode == 200 || response.StatusCode == 201) {
 			return errors.New(response.Status)
 		}
 		body, err := ioutil.ReadAll(response.Body)
@@ -185,7 +218,7 @@ func (s defaultStreamer) uploadFile(file *os.File, stat os.FileInfo, uploadID *s
 		if err != nil {
 			return err
 		}
-		bar.Add64(int64(read) * 100 / totalSize)
+		bar.SetCurrent((int64(read)*i + offset) * 100 / totalSize)
 	}
 	bar.SetCurrent(100)
 	hashFunction := sha256.New()
@@ -193,21 +226,17 @@ func (s defaultStreamer) uploadFile(file *os.File, stat os.FileInfo, uploadID *s
 	if err != nil {
 		return err
 	}
-	checksum := hex.EncodeToString(hashFunction.Sum(nil))
 	response, err := s.client.DoRequest(http.MethodPatch,
-		configuration.GetLocalEGAInstanceURL()+"/stream/"+url.QueryEscape(fileName),
+		streamurl,
 		nil,
-		map[string]string{"Proxy-Authorization": "Bearer " + configuration.GetElixirAAIToken()},
-		map[string]string{"uploadId": *uploadID,
-			"chunk":    "end",
-			"fileSize": strconv.FormatInt(totalSize, 10),
-			"sha256":   checksum},
-		configuration.GetCentralEGAUsername(),
-		configuration.GetCentralEGAPassword())
+		map[string]string{"Authorization": "Bearer " + tsd_token},
+		map[string]string{"id": *uploadID, "chunk": "end"},
+		"",
+		"")
 	if err != nil {
 		return err
 	}
-	if response.StatusCode != 200 {
+	if !(response.StatusCode == 200 || response.StatusCode == 201) {
 		return errors.New(response.Status)
 	}
 	err = response.Body.Close()
@@ -289,4 +318,69 @@ func fileExists(fileName string) bool {
 		return false
 	}
 	return !info.IsDir()
+}
+
+func (s defaultStreamer) findTSDtoken(c conf.Configuration) (string, jwt.MapClaims, error) {
+	fmt.Println("reading tsd token")
+	response, err := s.client.DoRequest(http.MethodGet,
+		c.GetLocalEGAInstanceURL()+"/gettoken",
+		nil,
+		map[string]string{"Proxy-Authorization": "Bearer " + c.GetElixirAAIToken()},
+		nil,
+		c.GetCentralEGAUsername(),
+		c.GetCentralEGAPassword())
+	if err != nil {
+		return "", nil, err
+	}
+	if response.StatusCode != 200 {
+		return "", nil, errors.New(response.Status)
+	}
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return "", nil, err
+	}
+
+	tsd_token := string(body)
+	var respjson ResponseJson
+	err = json.Unmarshal(body, &respjson)
+	if err != nil {
+		return "", nil, err
+	}
+	err = response.Body.Close()
+	if err != nil {
+		return "", nil, err
+	}
+
+	claims := jwt.MapClaims{}
+	jwt.ParseWithClaims(respjson.Token, claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(""), nil
+	})
+	return tsd_token, claims, nil
+}
+
+func (s defaultStreamer) CheckTSDTokenIsExpired(c conf.Configuration, ExpField float64) (bool, error) {
+	ExpirationTimeOfToken := time.Unix(int64(ExpField), 0).UTC() // ExpirationTimeOfToken in a Unix object
+	var nowtime time.Time
+	var err error
+	ListOfNTPAddresses := c.GetntpURL()
+	for _, ntp_address := range ListOfNTPAddresses {
+		nowtime, err = ntp.Time(ntp_address)
+		if err == nil {
+			break
+		}
+	}
+
+	if err != nil {
+		fmt.Println(err)
+		return false, err
+	}
+	nowtime = nowtime.UTC()
+	nowplusfive := nowtime.Add(5 * time.Minute)
+	//5 minutes before time of expiration, consider as expired
+	if nowplusfive.After(ExpirationTimeOfToken) {
+		return true, nil // have reached the expiration timepoint
+	} else {
+		return false, nil // have not reach the expiration timepoint
+	}
+
 }
