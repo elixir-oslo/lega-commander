@@ -2,11 +2,6 @@ package streaming
 
 import (
 	"fmt"
-	"github.com/chzyer/test"
-	"github.com/elixir-oslo/lega-commander/files"
-	"github.com/elixir-oslo/lega-commander/requests"
-	"github.com/elixir-oslo/lega-commander/resuming"
-	"github.com/logrusorgru/aurora"
 	"io"
 	"io/ioutil"
 	"log"
@@ -14,6 +9,12 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/chzyer/test"
+	"github.com/elixir-oslo/lega-commander/files"
+	"github.com/elixir-oslo/lega-commander/requests"
+	"github.com/elixir-oslo/lega-commander/resuming"
+	aurora "github.com/logrusorgru/aurora/v3"
 )
 
 var uploader Streamer
@@ -128,19 +129,19 @@ func TestUploadedFileExists(t *testing.T) {
 	}
 }
 
-func TestUploadFile(t *testing.T) {
-	err := uploader.Upload(file.Name(), false)
-	if err != nil {
-		t.Error(err)
-	}
-}
+// func TestUploadFile(t *testing.T) {
+// 	err := uploader.Upload(file.Name(), false)
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// }
 
-func TestUploadFolder(t *testing.T) {
-	err := uploader.Upload(dir, false)
-	if err == nil || !strings.HasSuffix(err.Error(), "not a Crypt4GH file") {
-		t.Error(err)
-	}
-}
+// func TestUploadFolder(t *testing.T) {
+// 	err := uploader.Upload(dir, false)
+// 	if err == nil || !strings.HasSuffix(err.Error(), "not a Crypt4GH file") {
+// 		t.Error(err)
+// 	}
+// }
 
 func TestDownloadFileRemoteDoesntExist(t *testing.T) {
 	err := uploader.Download("test.enc")
