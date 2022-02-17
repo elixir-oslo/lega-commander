@@ -3,12 +3,13 @@ package files
 
 import (
 	"errors"
-	"github.com/buger/jsonparser"
-	"github.com/elixir-oslo/lega-commander/conf"
-	"github.com/elixir-oslo/lega-commander/requests"
 	"io/ioutil"
 	"net/http"
 	"strconv"
+
+	"github.com/buger/jsonparser"
+	"github.com/elixir-oslo/lega-commander/conf"
+	"github.com/elixir-oslo/lega-commander/requests"
 )
 
 // File structure represents uploaded File.
