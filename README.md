@@ -23,14 +23,27 @@ Go to the [releases page](https://github.com/elixir-oslo/lega-commander/releases
 
 ## Configuration
 Before using the app, make sure all the environment variables required for authentication are set:
+>In linux and MacOS you can use below commands in commandlines  to set them:
+>
+>```
+>export CENTRAL_EGA_USERNAME=...
+>export CENTRAL_EGA_PASSWORD=...
+>export ELIXIR_AAI_TOKEN=...
+>```
 
-```
-export CENTRAL_EGA_USERNAME=...
-export CENTRAL_EGA_PASSWORD=...
-export ELIXIR_AAI_TOKEN=...
-```
+> In windows, the variables must be set in environmental variables list.(Explained [here](https://www.architectryan.com/2018/08/31/how-to-change-environment-variables-on-windows-10/))
 
-NB: `ELIXIR_AAI_TOKEN` has an expiration time of nearly two hours, so one would need to re-obtain and re-set it upon expiration.
+Table below shows how there variables must be set:
+| Enviromental variable name        | description
+|-------------------                | -------------
+|CENTRAL_EGA_USERNAME               | The user name that you received from CEGA website(https://ega-archive.org/)
+|CENTRAL_EGA_PASSWORD               | The password that you received from CEGA website(https://ega-archive.org/)
+|ELIXIR_AAI_TOKEN                   | The token that you received after login here(https://ega.elixir.no/)
+|TSD_API_VER                        | The version of tsd file api that this software communicates with (for example: `v1` or `v2`...)
+|TSD_PROJ_NAME                      | The name of the project inside the tsd that the file(s) is/are being sent there (The default value is `p11` which must be set)
+|TSD_SERV                           | The name of the service inside the tsd that the file(s) is/are being sent there (The default value is `ega` which must be set)
+
+
 
 Also, the tool is pre-configured to work with Norwegian Federated EGA instance: https://ega.elixir.no 
 If you want to specify another instance, you can set `LOCAL_EGA_INSTANCE_URL` environment variable. 
