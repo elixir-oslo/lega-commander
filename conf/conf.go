@@ -2,15 +2,17 @@
 package conf
 
 import (
-	"github.com/logrusorgru/aurora"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
+
+	aurora "github.com/logrusorgru/aurora/v3"
 )
 
 const defaultInstanceURL = "https://ega.elixir.no"
+const defaultTSDfileAPIbaseURL = "https://api.tsd.usit.no"
 const defaultChunkSize = 50
 
 var once sync.Once
@@ -18,11 +20,23 @@ var instance *defaultConfiguration
 
 // Configuration interface is a holder for application settings.
 type Configuration interface {
+	ConcatenateURLPartsToString(array []string) string
+	GetTSDbaseURL() string
+	GetntpURL() [4]string
+	GetTSDAPIVersion() string
+	GetTSDProjectName() string
+	GetTSDservice() string
+	GetTSDURL() string
 	GetCentralEGAUsername() string
 	GetCentralEGAPassword() string
 	GetLocalEGAInstanceURL() string
 	GetElixirAAIToken() string
 	GetChunkSize() int
+}
+
+func (dc defaultConfiguration) ConcatenateURLPartsToString(array []string) string {
+	str := strings.Join(array, "/")
+	return str
 }
 
 // defaultConfiguration structure is a default implementation of the Configuration interface.
@@ -62,6 +76,52 @@ func (dc defaultConfiguration) GetElixirAAIToken() string {
 		log.Fatal(aurora.Red("ELIXIR_AAI_TOKEN environment variable is not set"))
 	}
 	return elixirAAIToken
+}
+
+func (dc defaultConfiguration) GetTSDURL() string {
+	return dc.ConcatenateURLPartsToString(
+		[]string{
+			dc.GetTSDbaseURL(), dc.GetTSDAPIVersion(), dc.GetTSDProjectName(), dc.GetTSDservice()},
+	)
+}
+
+func (dc defaultConfiguration) GetTSDbaseURL() string {
+	TSDbaseURL := os.Getenv("TSD_BASE_URL")
+	if TSDbaseURL == "" {
+		TSDbaseURL = defaultTSDfileAPIbaseURL
+	}
+	if strings.HasSuffix(TSDbaseURL, "/") {
+		return TSDbaseURL[:len(TSDbaseURL)-1]
+	}
+	return TSDbaseURL
+}
+
+func (dc defaultConfiguration) GetntpURL() [4]string {
+	return [4]string{"no.pool.ntp.org", "0.pool.ntp.org", "1.pool.ntp.org", "2.pool.ntp.org"}
+}
+
+func (dc defaultConfiguration) GetTSDAPIVersion() string {
+	tsdVersion := os.Getenv("TSD_API_VER")
+	if tsdVersion == "" {
+		log.Fatal(aurora.Red("TSD_API_VER environment variable is not set"))
+	}
+	return tsdVersion
+}
+
+func (dc defaultConfiguration) GetTSDProjectName() string {
+	tsdProject := os.Getenv("TSD_PROJ_NAME")
+	if tsdProject == "" {
+		log.Fatal(aurora.Red("TSD_PROJ_NAME environment variable is not set"))
+	}
+	return tsdProject
+}
+
+func (dc defaultConfiguration) GetTSDservice() string {
+	tsdService := os.Getenv("TSD_SERV")
+	if tsdService == "" {
+		log.Fatal(aurora.Red("TSD_SERV environment variable is not set"))
+	}
+	return tsdService
 }
 
 func (dc defaultConfiguration) GetChunkSize() int {
