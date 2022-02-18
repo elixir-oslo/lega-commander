@@ -123,25 +123,25 @@ func (mockClient) DoRequest(method, url string, _ io.Reader, headers, params map
 }
 
 func TestUploadedFileExists(t *testing.T) {
-	err := uploader.Upload(existingFile.Name(), false)
+	err := uploader.Upload(existingFile.Name(), false, true)
 	if err == nil {
 		t.Error()
 	}
 }
 
-// func TestUploadFile(t *testing.T) {
-// 	err := uploader.Upload(file.Name(), false)
-// 	if err != nil {
-// 		t.Error(err)
-// 	}
-// }
+func TestUploadFile(t *testing.T) {
+	err := uploader.Upload(file.Name(), false, true)
+	if err != nil {
+		t.Error(err)
+	}
+}
 
-// func TestUploadFolder(t *testing.T) {
-// 	err := uploader.Upload(dir, false)
-// 	if err == nil || !strings.HasSuffix(err.Error(), "not a Crypt4GH file") {
-// 		t.Error(err)
-// 	}
-// }
+func TestUploadFolder(t *testing.T) {
+	err := uploader.Upload(dir, false, true)
+	if err == nil || !strings.HasSuffix(err.Error(), "not a Crypt4GH file") {
+		t.Error(err)
+	}
+}
 
 func TestDownloadFileRemoteDoesntExist(t *testing.T) {
 	err := uploader.Download("test.enc")
