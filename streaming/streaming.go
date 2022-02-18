@@ -3,7 +3,9 @@ package streaming
 
 import (
 	"bytes"
+	"crypto/md5"
 	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -30,8 +32,8 @@ import (
 
 // Streamer interface provides methods for uploading and downloading files from LocalEGA instance.
 type Streamer interface {
-	Upload(path string, resume bool) error
-	uploadFolder(folder *os.File, resume bool) error
+	Upload(path string, resume bool, proxy bool) error
+	uploadFolder(folder *os.File, resume bool, proxy bool) error
 	uploadFile(file *os.File, stat os.FileInfo, uploadID *string, offset int64, startChunk int64) error
 	Download(fileName string) error
 }
@@ -78,7 +80,7 @@ func NewStreamer(client *requests.Client, fileManager *files.FileManager, resuma
 }
 
 // Upload method uploads file or folder to LocalEGA.
-func (s defaultStreamer) Upload(path string, resume bool) error {
+func (s defaultStreamer) Upload(path string, resume bool, proxy bool) error {
 	file, err := os.Open(path)
 	if err != nil {
 		return err
@@ -89,7 +91,7 @@ func (s defaultStreamer) Upload(path string, resume bool) error {
 		return err
 	}
 	if stat.IsDir() {
-		return s.uploadFolder(file, resume)
+		return s.uploadFolder(file, resume, proxy)
 	}
 	if resume {
 		fileName := filepath.Base(file.Name())
@@ -99,15 +101,24 @@ func (s defaultStreamer) Upload(path string, resume bool) error {
 		}
 		for _, resumable := range *resumablesList {
 			if resumable.Name == fileName {
-				return s.uploadFile(file, stat, &resumable.ID, resumable.Size, resumable.Chunk)
+				if proxy {
+					return s.uploadFile(file, stat, &resumable.ID, resumable.Size, resumable.Chunk)
+				} else {
+					return s.uploadFileWithoutProxy(file, stat, &resumable.ID, resumable.Size, resumable.Chunk)
+				}
+
 			}
 		}
 		return nil
 	}
-	return s.uploadFile(file, stat, nil, 0, 1)
+	if proxy {
+		return s.uploadFile(file, stat, nil, 0, 1)
+	} else {
+		return s.uploadFileWithoutProxy(file, stat, nil, 0, 1)
+	}
 }
 
-func (s defaultStreamer) uploadFolder(folder *os.File, resume bool) error {
+func (s defaultStreamer) uploadFolder(folder *os.File, resume bool, proxy bool) error {
 	readdir, err := folder.Readdir(-1)
 	if err != nil {
 		return err
@@ -117,7 +128,7 @@ func (s defaultStreamer) uploadFolder(folder *os.File, resume bool) error {
 		if err != nil {
 			return err
 		}
-		err = s.Upload(abs, resume)
+		err = s.Upload(abs, resume, proxy)
 		if err != nil {
 			return err
 		}
@@ -125,7 +136,7 @@ func (s defaultStreamer) uploadFolder(folder *os.File, resume bool) error {
 	return nil
 }
 
-func (s defaultStreamer) uploadFile(file *os.File, stat os.FileInfo, uploadID *string, offset, startChunk int64) error {
+func (s defaultStreamer) uploadFileWithoutProxy(file *os.File, stat os.FileInfo, uploadID *string, offset, startChunk int64) error {
 	fileName := filepath.Base(file.Name())
 	filesList, err := s.fileManager.ListFiles(true)
 	if err != nil {
@@ -383,4 +394,106 @@ func (s defaultStreamer) CheckTSDTokenIsExpired(c conf.Configuration, ExpField f
 		return false, nil // have not reach the expiration timepoint
 	}
 
+}
+
+func (s defaultStreamer) uploadFile(file *os.File, stat os.FileInfo, uploadID *string, offset, startChunk int64) error {
+	fileName := filepath.Base(file.Name())
+	filesList, err := s.fileManager.ListFiles(true)
+	if err != nil {
+		return err
+	}
+	for _, uploadedFile := range *filesList {
+		if fileName == filepath.Base(uploadedFile.FileName) {
+			return errors.New("File " + file.Name() + " is already uploaded. Please, remove it from the Inbox first: lega-commander files -d " + filepath.Base(uploadedFile.FileName))
+		}
+	}
+	if err = isCrypt4GHFile(file); err != nil {
+		return err
+	}
+	totalSize := stat.Size()
+	fmt.Println(aurora.Blue("Uploading file: " + file.Name() + " (" + strconv.FormatInt(totalSize, 10) + " bytes)"))
+	bar := pb.StartNew(100)
+	bar.SetCurrent(offset * 100 / totalSize)
+	bar.Start()
+	configuration := conf.NewConfiguration()
+	_, err = file.Seek(offset, 0)
+	if err != nil {
+		return err
+	}
+	buffer := make([]byte, configuration.GetChunkSize()*1024*1024)
+	for i := startChunk; true; i++ {
+		read, err := file.Read(buffer)
+		if err != nil {
+			if err != io.EOF {
+				return err
+			}
+			break
+		}
+		chunk := buffer[:read]
+		sum := md5.Sum(chunk)
+		params := map[string]string{
+			"chunk": strconv.FormatInt(i, 10),
+			"md5":   hex.EncodeToString(sum[:16])}
+		if i != 1 {
+			params["uploadId"] = *uploadID
+		}
+		response, err := s.client.DoRequest(http.MethodPatch,
+			configuration.GetLocalEGAInstanceURL()+"/stream/"+url.QueryEscape(fileName),
+			bytes.NewReader(chunk),
+			map[string]string{"Proxy-Authorization": "Bearer " + configuration.GetElixirAAIToken()},
+			params,
+			configuration.GetCentralEGAUsername(),
+			configuration.GetCentralEGAPassword())
+		if err != nil {
+			return err
+		}
+		if response.StatusCode != 200 {
+			return errors.New(response.Status)
+		}
+		body, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			return err
+		}
+		err = response.Body.Close()
+		if err != nil {
+			return err
+		}
+		if uploadID == nil {
+			uploadID = new(string)
+		}
+		*uploadID, err = jsonparser.GetString(body, "id")
+		if err != nil {
+			return err
+		}
+		bar.SetCurrent((int64(read)*i + offset) * 100 / totalSize)
+	}
+	bar.SetCurrent(100)
+	hashFunction := sha256.New()
+	_, err = io.Copy(hashFunction, file)
+	if err != nil {
+		return err
+	}
+	checksum := hex.EncodeToString(hashFunction.Sum(nil))
+	response, err := s.client.DoRequest(http.MethodPatch,
+		configuration.GetLocalEGAInstanceURL()+"/stream/"+url.QueryEscape(fileName),
+		nil,
+		map[string]string{"Proxy-Authorization": "Bearer " + configuration.GetElixirAAIToken()},
+		map[string]string{"uploadId": *uploadID,
+			"chunk":    "end",
+			"fileSize": strconv.FormatInt(totalSize, 10),
+			"sha256":   checksum},
+		configuration.GetCentralEGAUsername(),
+		configuration.GetCentralEGAPassword())
+	if err != nil {
+		return err
+	}
+	if response.StatusCode != 200 {
+		return errors.New(response.Status)
+	}
+	err = response.Body.Close()
+	if err != nil {
+		return err
+	}
+	bar.Finish()
+	return nil
 }
