@@ -55,7 +55,7 @@ Table below shows how there variables must be set:
 
 ## Usage
 
-> For the time being, all of **upload** commands **must** be run with `-p` argument.
+> For the time being, all of **upload** and **download** commands **must** be run with `-p` argument.
 ```
 $ lega-commander
 lega-commander [inbox | outbox | resumables | upload | download] <args>
@@ -77,7 +77,9 @@ lega-commander [inbox | outbox | resumables | upload | download] <args>
   -p, --proxy                   Upload the files through the proxy service
 
  download:
-  -f, --file= File to download
+  -f, --file= FILE or =FOLDER   File or folder to download
+  -p, --proxy                   Download the files through the proxy service
+
 ```
 ### Example Usage
 As an example, if we want to upload file named `sample-c4gh-file.c4gh` and in path of `/path/to/a/c4gh/file`
