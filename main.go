@@ -61,6 +61,7 @@ var uploadingOptionsParser = flags.NewParser(&uploadingOptions, flags.None)
 
 var downloadingOptions struct {
 	FileName string `short:"f"  long:"file" description:"File to download\t[optional]"`
+	Proxy    bool   `short:"p" long:"proxy" description:"download the files through the proxy service"`
 }
 
 var downloadingOptionsParser = flags.NewParser(&downloadingOptions, flags.None)
@@ -201,7 +202,7 @@ func main() {
 		if err != nil {
 			log.Fatal(aurora.Red(err))
 		}
-		streamer, err := streaming.NewStreamer(nil, nil, nil)
+		streamer, err := streaming.NewStreamer(nil, nil, nil, uploadingOptions.Proxy)
 		if err != nil {
 			log.Fatal(aurora.Red(err))
 		}
@@ -214,7 +215,7 @@ func main() {
 		if err != nil {
 			log.Fatal(aurora.Red(err))
 		}
-		streamer, err := streaming.NewStreamer(nil, nil, nil)
+		streamer, err := streaming.NewStreamer(nil, nil, nil, downloadingOptions.Proxy)
 		if err != nil {
 			log.Fatal(aurora.Red(err))
 		}
