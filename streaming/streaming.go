@@ -42,6 +42,8 @@ type defaultStreamer struct {
 	client            requests.Client
 	fileManager       files.FileManager
 	resumablesManager resuming.ResumablesManager
+	tsd_token         string
+	claims            jwt.MapClaims
 }
 type ResponseJson struct {
 	// defining token response that comes from tsd proxy
@@ -51,7 +53,7 @@ type ResponseJson struct {
 }
 
 // NewStreamer method constructs Streamer structure.
-func NewStreamer(client *requests.Client, fileManager *files.FileManager, resumablesManager *resuming.ResumablesManager) (Streamer, error) {
+func NewStreamer(client *requests.Client, fileManager *files.FileManager, resumablesManager *resuming.ResumablesManager, proxy bool) (Streamer, error) {
 	streamer := defaultStreamer{}
 	if client != nil {
 		streamer.client = *client
@@ -75,6 +77,14 @@ func NewStreamer(client *requests.Client, fileManager *files.FileManager, resuma
 			return nil, err
 		}
 		streamer.resumablesManager = newResumablesManager
+	}
+	configuration := conf.NewConfiguration()
+	var err error
+	if !proxy {
+		streamer.tsd_token, streamer.claims, err = streamer.getTSDtoken(configuration)
+	}
+	if err != nil {
+		return nil, err
 	}
 	return streamer, nil
 }
@@ -136,7 +146,7 @@ func (s defaultStreamer) uploadFolder(folder *os.File, resume bool, proxy bool) 
 	return nil
 }
 
-func (s defaultStreamer) uploadFileWithoutProxy(file *os.File, stat os.FileInfo, uploadID *string, offset, startChunk int64) error {
+func (s *defaultStreamer) uploadFileWithoutProxy(file *os.File, stat os.FileInfo, uploadID *string, offset, startChunk int64) error {
 	fileName := filepath.Base(file.Name())
 	filesList, err := s.fileManager.ListFiles(true)
 	if err != nil {
@@ -148,13 +158,9 @@ func (s defaultStreamer) uploadFileWithoutProxy(file *os.File, stat os.FileInfo,
 		}
 	}
 	configuration := conf.NewConfiguration()
-	tsd_token, claims, err := s.findTSDtoken(configuration)
-	if err != nil {
-		return err
-	}
 	streamurl := configuration.ConcatenateURLPartsToString(
 		[]string{
-			configuration.GetTSDURL(), claims["user"].(string), "files", url.QueryEscape(fileName),
+			configuration.GetTSDURL(), s.claims["user"].(string), "files", url.QueryEscape(fileName),
 		},
 	)
 	if err = isCrypt4GHFile(file); err != nil {
@@ -180,12 +186,12 @@ func (s defaultStreamer) uploadFileWithoutProxy(file *os.File, stat os.FileInfo,
 			break
 		}
 		chunk := buffer[:read]
-		TokenIsExpired, err := s.CheckTSDTokenIsExpired(configuration, claims["exp"].(float64))
+		TokenIsExpired, err := s.checkTSDTokenIsExpired(configuration, s.claims["exp"].(float64))
 		if err != nil {
 			return err
 		}
 		if TokenIsExpired {
-			tsd_token, claims, err = s.findTSDtoken(configuration)
+			s.tsd_token, s.claims, err = s.refreshTSDtoken(configuration, s.tsd_token)
 		}
 		if err != nil {
 			return err
@@ -195,7 +201,7 @@ func (s defaultStreamer) uploadFileWithoutProxy(file *os.File, stat os.FileInfo,
 			response, err = s.client.DoRequest(http.MethodPatch,
 				streamurl,
 				bytes.NewReader(chunk),
-				map[string]string{"Authorization": "Bearer " + tsd_token},
+				map[string]string{"Authorization": "Bearer " + s.tsd_token},
 				map[string]string{"id": *uploadID, "chunk": strconv.FormatInt(i, 10)},
 				"",
 				"")
@@ -203,7 +209,7 @@ func (s defaultStreamer) uploadFileWithoutProxy(file *os.File, stat os.FileInfo,
 			response, err = s.client.DoRequest(http.MethodPatch,
 				streamurl,
 				bytes.NewReader(chunk),
-				map[string]string{"Authorization": "Bearer " + tsd_token},
+				map[string]string{"Authorization": "Bearer " + s.tsd_token},
 				map[string]string{"chunk": "1"},
 				"",
 				"")
@@ -237,10 +243,11 @@ func (s defaultStreamer) uploadFileWithoutProxy(file *os.File, stat os.FileInfo,
 	if err != nil {
 		return err
 	}
+	fmt.Println("assembling different parts of file together in order to make it! Duration varies based on filesize.")
 	response, err := s.client.DoRequest(http.MethodPatch,
 		streamurl,
 		nil,
-		map[string]string{"Authorization": "Bearer " + tsd_token},
+		map[string]string{"Authorization": "Bearer " + s.tsd_token},
 		map[string]string{"id": *uploadID, "chunk": "end"},
 		"",
 		"")
@@ -330,19 +337,7 @@ func fileExists(fileName string) bool {
 	}
 	return !info.IsDir()
 }
-
-func (s defaultStreamer) findTSDtoken(c conf.Configuration) (string, jwt.MapClaims, error) {
-	fmt.Println("reading tsd token")
-	response, err := s.client.DoRequest(http.MethodGet,
-		c.GetLocalEGAInstanceURL()+"/gettoken",
-		nil,
-		map[string]string{"Proxy-Authorization": "Bearer " + c.GetElixirAAIToken()},
-		nil,
-		c.GetCentralEGAUsername(),
-		c.GetCentralEGAPassword())
-	if err != nil {
-		return "", nil, err
-	}
+func extractTheClaimsOutOfTSDToken(response *http.Response) (string, jwt.MapClaims, error) {
 	if response.StatusCode != 200 {
 		return "", nil, errors.New(response.Status)
 	}
@@ -369,7 +364,39 @@ func (s defaultStreamer) findTSDtoken(c conf.Configuration) (string, jwt.MapClai
 	return tsd_token, claims, nil
 }
 
-func (s defaultStreamer) CheckTSDTokenIsExpired(c conf.Configuration, ExpField float64) (bool, error) {
+func (s *defaultStreamer) refreshTSDtoken(c conf.Configuration, token string) (string, jwt.MapClaims, error) {
+	fmt.Println("tsd connection details is expired! now refreshing connection details by asking it from proxy service...")
+	response, err := s.client.DoRequest(http.MethodGet,
+		c.GetLocalEGAInstanceURL()+"/refreshtoken",
+		nil,
+		map[string]string{"Expired-Token": token},
+		nil,
+		"",
+		"")
+	if err != nil {
+		return "", nil, err
+	}
+	return extractTheClaimsOutOfTSDToken(response)
+}
+
+func (s defaultStreamer) getTSDtoken(c conf.Configuration) (string, jwt.MapClaims, error) {
+	fmt.Println("asking for tsd connection details from proxy service...")
+	// var response *http.Response
+	// var err error
+	response, err := s.client.DoRequest(http.MethodGet,
+		c.GetLocalEGAInstanceURL()+"/gettoken",
+		nil,
+		map[string]string{"Proxy-Authorization": "Bearer " + c.GetElixirAAIToken()},
+		nil,
+		c.GetCentralEGAUsername(),
+		c.GetCentralEGAPassword())
+	if err != nil {
+		return "", nil, err
+	}
+	return extractTheClaimsOutOfTSDToken(response)
+}
+
+func (s defaultStreamer) checkTSDTokenIsExpired(c conf.Configuration, ExpField float64) (bool, error) {
 	ExpirationTimeOfToken := time.Unix(int64(ExpField), 0).UTC() // ExpirationTimeOfToken in a Unix object
 	var nowtime time.Time
 	var err error
@@ -382,6 +409,7 @@ func (s defaultStreamer) CheckTSDTokenIsExpired(c conf.Configuration, ExpField f
 	}
 
 	if err != nil {
+		fmt.Println("connecting to ntp servers is problematic!")
 		fmt.Println(err)
 		return false, err
 	}
@@ -474,6 +502,7 @@ func (s defaultStreamer) uploadFile(file *os.File, stat os.FileInfo, uploadID *s
 		return err
 	}
 	checksum := hex.EncodeToString(hashFunction.Sum(nil))
+	fmt.Println("assembling different parts of file together in order to make it! Duration varies based on filesize.")
 	response, err := s.client.DoRequest(http.MethodPatch,
 		configuration.GetLocalEGAInstanceURL()+"/stream/"+url.QueryEscape(fileName),
 		nil,
