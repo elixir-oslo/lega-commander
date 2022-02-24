@@ -170,7 +170,8 @@ func (s *defaultStreamer) uploadFileWithoutProxy(file *os.File, stat os.FileInfo
 	totalSize := stat.Size()
 	fmt.Println(aurora.Blue("Uploading file: " + file.Name() + " (" + strconv.FormatInt(totalSize, 10) + " bytes)"))
 	bar := pb.StartNew(100)
-	bar.SetCurrent(offset * 100 / totalSize)
+	bar.SetTotal(totalSize)
+	bar.SetCurrent(offset)
 	bar.Start()
 
 	_, err = file.Seek(offset, 0)
@@ -236,9 +237,9 @@ func (s *defaultStreamer) uploadFileWithoutProxy(file *os.File, stat os.FileInfo
 		if err != nil {
 			return err
 		}
-		bar.SetCurrent((int64(read)*i + offset) * 100 / totalSize)
+		bar.SetCurrent(int64(read)*(i-startChunk+1) + offset)
 	}
-	bar.SetCurrent(100)
+	bar.SetCurrent(totalSize)
 	hashFunction := sha256.New()
 	_, err = io.Copy(hashFunction, file)
 	if err != nil {
@@ -446,7 +447,8 @@ func (s defaultStreamer) uploadFile(file *os.File, stat os.FileInfo, uploadID *s
 	totalSize := stat.Size()
 	fmt.Println(aurora.Blue("Uploading file: " + file.Name() + " (" + strconv.FormatInt(totalSize, 10) + " bytes)"))
 	bar := pb.StartNew(100)
-	bar.SetCurrent(offset * 100 / totalSize)
+	bar.SetTotal(totalSize)
+	bar.SetCurrent(offset)
 	bar.Start()
 	configuration := conf.NewConfiguration()
 	_, err = file.Seek(offset, 0)
@@ -498,9 +500,9 @@ func (s defaultStreamer) uploadFile(file *os.File, stat os.FileInfo, uploadID *s
 		if err != nil {
 			return err
 		}
-		bar.SetCurrent((int64(read)*i + offset) * 100 / totalSize)
+		bar.SetCurrent(int64(read)*(i-startChunk+1) + offset)
 	}
-	bar.SetCurrent(100)
+	bar.SetCurrent(totalSize)
 	hashFunction := sha256.New()
 	_, err = io.Copy(hashFunction, file)
 	if err != nil {
