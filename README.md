@@ -31,20 +31,17 @@ Before using the lega commander, make sure all the environment variables require
 >export CENTRAL_EGA_USERNAME=...
 >export CENTRAL_EGA_PASSWORD=...
 >export ELIXIR_AAI_TOKEN=...
->(cont.)
 >```
 
 > In windows, the variables must be set in environmental variables list.(Explained [here](https://www.architectryan.com/2018/08/31/how-to-change-environment-variables-on-windows-10/))
 
 Table below shows how there variables must be set:
-| Enviromental variable name        | description
+| Environmental variable name        | description
 |-------------------                | -------------
 |CENTRAL_EGA_USERNAME               | The user name that you received from [CEGA website](https://ega-archive.org/)
 |CENTRAL_EGA_PASSWORD               | The password that you received from [CEGA website](https://ega-archive.org/)
 |ELIXIR_AAI_TOKEN                   | The token that you received after login here:(https://ega.elixir.no/)
-|TSD_API_VER                        | The version of tsd file api that this software communicates with (for example: `v1` or `v2`...)(The default value is `v1` which must be set)
-|TSD_PROJ_NAME                      | The name of the project inside the tsd that the file(s) is/are being sent there (The default value is `p11` which must be set)
-|TSD_SERV                           | The name of the service inside the tsd that the file(s) is/are being sent there (The default value is `ega` which must be set)
+
 
 
 
