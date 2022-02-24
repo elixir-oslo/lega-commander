@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
@@ -396,22 +397,26 @@ func (s defaultStreamer) getTSDtoken(c conf.Configuration) (string, jwt.MapClaim
 	return extractTheClaimsOutOfTSDToken(response)
 }
 
+func fetchTimeFromNTP(ListOfNTPAddresses [4]string, terminated *bool, nowtime *time.Time) {
+	rand.Seed(time.Now().UnixMicro())
+	randomlySelectedNTPAddresses := ListOfNTPAddresses[rand.Intn(len(ListOfNTPAddresses))]
+	var err error
+	*nowtime, err = ntp.Time(randomlySelectedNTPAddresses)
+	if err == nil {
+		*terminated = true
+	}
+}
+
 func (s defaultStreamer) checkTSDTokenIsExpired(c conf.Configuration, ExpField float64) (bool, error) {
+	ListOfNTPAddresses := c.GetntpURL()
 	ExpirationTimeOfToken := time.Unix(int64(ExpField), 0).UTC() // ExpirationTimeOfToken in a Unix object
 	var nowtime time.Time
-	var err error
-	ListOfNTPAddresses := c.GetntpURL()
-	for _, ntp_address := range ListOfNTPAddresses {
-		nowtime, err = ntp.Time(ntp_address)
-		if err == nil {
+	terminated := false
+	for nowtime.IsZero() {
+		if terminated {
 			break
 		}
-	}
-
-	if err != nil {
-		fmt.Println("connecting to ntp servers is problematic!")
-		fmt.Println(err)
-		return false, err
+		go fetchTimeFromNTP(ListOfNTPAddresses, &terminated, &nowtime)
 	}
 	nowtime = nowtime.UTC()
 	nowplusfive := nowtime.Add(5 * time.Minute)
