@@ -11,15 +11,12 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
-	"time"
 
-	"github.com/beevik/ntp"
 	"github.com/buger/jsonparser"
 	"github.com/cheggaaa/pb/v3"
 	"github.com/elixir-oslo/crypt4gh/model/headers"
@@ -188,13 +185,13 @@ func (s *defaultStreamer) uploadFileWithoutProxy(file *os.File, stat os.FileInfo
 			break
 		}
 		chunk := buffer[:read]
-		TokenIsExpired, err := s.checkTSDTokenIsExpired(configuration, s.claims["exp"].(float64))
-		if err != nil {
-			return err
-		}
-		if TokenIsExpired {
-			s.tsd_token, s.claims, err = s.refreshTSDtoken(configuration, s.tsd_token)
-		}
+		// TokenIsExpired, err := s.checkTSDTokenIsExpired(configuration, s.claims["exp"].(float64))
+		// if err != nil {
+		// 	return err
+		// }
+		// if TokenIsExpired {
+		// 	s.tsd_token, s.claims, err = s.refreshTSDtoken(configuration, s.tsd_token)
+		// }
 		if err != nil {
 			return err
 		}
@@ -366,20 +363,20 @@ func extractTheClaimsOutOfTSDToken(response *http.Response) (string, jwt.MapClai
 	return tsd_token, claims, nil
 }
 
-func (s *defaultStreamer) refreshTSDtoken(c conf.Configuration, token string) (string, jwt.MapClaims, error) {
-	fmt.Println("tsd connection details is expired! now refreshing connection details by asking it from proxy service...")
-	response, err := s.client.DoRequest(http.MethodGet,
-		c.GetLocalEGAInstanceURL()+"/refreshtoken",
-		nil,
-		map[string]string{"Expired-Token": token},
-		nil,
-		"",
-		"")
-	if err != nil {
-		return "", nil, err
-	}
-	return extractTheClaimsOutOfTSDToken(response)
-}
+// func (s *defaultStreamer) refreshTSDtoken(c conf.Configuration, token string) (string, jwt.MapClaims, error) {
+// 	fmt.Println("tsd connection details is expired! now refreshing connection details by asking it from proxy service...")
+// 	response, err := s.client.DoRequest(http.MethodGet,
+// 		c.GetLocalEGAInstanceURL()+"/refreshtoken",
+// 		nil,
+// 		map[string]string{"Expired-Token": token},
+// 		nil,
+// 		"",
+// 		"")
+// 	if err != nil {
+// 		return "", nil, err
+// 	}
+// 	return extractTheClaimsOutOfTSDToken(response)
+// }
 
 func (s defaultStreamer) getTSDtoken(c conf.Configuration) (string, jwt.MapClaims, error) {
 	fmt.Println("asking for tsd connection details from proxy service...")
@@ -398,37 +395,37 @@ func (s defaultStreamer) getTSDtoken(c conf.Configuration) (string, jwt.MapClaim
 	return extractTheClaimsOutOfTSDToken(response)
 }
 
-func fetchTimeFromNTP(ListOfNTPAddresses [4]string, terminated *bool, nowtime *time.Time) {
-	rand.Seed(time.Now().UnixMicro())
-	randomlySelectedNTPAddresses := ListOfNTPAddresses[rand.Intn(len(ListOfNTPAddresses))]
-	var err error
-	*nowtime, err = ntp.Time(randomlySelectedNTPAddresses)
-	if err == nil {
-		*terminated = true
-	}
-}
+// func fetchTimeFromNTP(ListOfNTPAddresses [4]string, terminated *bool, nowtime *time.Time) {
+// 	rand.Seed(time.Now().UnixMicro())
+// 	randomlySelectedNTPAddresses := ListOfNTPAddresses[rand.Intn(len(ListOfNTPAddresses))]
+// 	var err error
+// 	*nowtime, err = ntp.Time(randomlySelectedNTPAddresses)
+// 	if err == nil {
+// 		*terminated = true
+// 	}
+// }
 
-func (s defaultStreamer) checkTSDTokenIsExpired(c conf.Configuration, ExpField float64) (bool, error) {
-	ListOfNTPAddresses := c.GetntpURL()
-	ExpirationTimeOfToken := time.Unix(int64(ExpField), 0).UTC() // ExpirationTimeOfToken in a Unix object
-	var nowtime time.Time
-	terminated := false
-	for nowtime.IsZero() {
-		if terminated {
-			break
-		}
-		go fetchTimeFromNTP(ListOfNTPAddresses, &terminated, &nowtime)
-	}
-	nowtime = nowtime.UTC()
-	nowplusfive := nowtime.Add(5 * time.Minute)
-	//5 minutes before time of expiration, consider as expired
-	if nowplusfive.After(ExpirationTimeOfToken) {
-		return true, nil // have reached the expiration timepoint
-	} else {
-		return false, nil // have not reach the expiration timepoint
-	}
+// func (s defaultStreamer) checkTSDTokenIsExpired(c conf.Configuration, ExpField float64) (bool, error) {
+// 	ListOfNTPAddresses := c.GetntpURL()
+// 	ExpirationTimeOfToken := time.Unix(int64(ExpField), 0).UTC() // ExpirationTimeOfToken in a Unix object
+// 	var nowtime time.Time
+// 	terminated := false
+// 	for nowtime.IsZero() {
+// 		if terminated {
+// 			break
+// 		}
+// 		go fetchTimeFromNTP(ListOfNTPAddresses, &terminated, &nowtime)
+// 	}
+// 	nowtime = nowtime.UTC()
+// 	nowplusfive := nowtime.Add(5 * time.Minute)
+// 	//5 minutes before time of expiration, consider as expired
+// 	if nowplusfive.After(ExpirationTimeOfToken) {
+// 		return true, nil // have reached the expiration timepoint
+// 	} else {
+// 		return false, nil // have not reach the expiration timepoint
+// 	}
 
-}
+// }
 
 func (s defaultStreamer) uploadFile(file *os.File, stat os.FileInfo, uploadID *string, offset, startChunk int64) error {
 	fileName := filepath.Base(file.Name())
