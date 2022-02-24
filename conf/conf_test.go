@@ -16,7 +16,6 @@ func setup() {
 	_ = os.Setenv("CENTRAL_EGA_USERNAME", "1")
 	_ = os.Setenv("CENTRAL_EGA_PASSWORD", "2")
 	_ = os.Setenv("ELIXIR_AAI_TOKEN", "3")
-	_ = os.Setenv("TSD_API_VER", "4")
 	_ = os.Setenv("TSD_PROJ_NAME", "5")
 	_ = os.Setenv("TSD_SERV", "6")
 }
@@ -54,7 +53,7 @@ func TestGetElixirAAIToken(t *testing.T) {
 
 func TestGetTSDAPIVersion(t *testing.T) {
 	configuration := NewConfiguration()
-	if configuration.GetTSDAPIVersion() != "4" {
+	if configuration.GetTSDAPIVersion() != "v1" {
 		t.Error()
 	}
 }
@@ -66,7 +65,7 @@ func TestGetTSDProjectName(t *testing.T) {
 }
 func TestGetTSDservice(t *testing.T) {
 	configuration := NewConfiguration()
-	if configuration.GetTSDservice() != "6" {
+	if configuration.GetTSDservice() != "ega" {
 		t.Error()
 	}
 }
@@ -132,11 +131,11 @@ func TestNewConfigurationNonNumericChunkSize(t *testing.T) {
 }
 func TestNewConfigurationGetTSDURL(t *testing.T) {
 	_ = os.Setenv("TSD_BASE_URL", "tsd_base/")
-	_ = os.Setenv("TSD_API_VER", "tsd_ver")
+
 	_ = os.Setenv("TSD_PROJ_NAME", "tsd_project")
-	_ = os.Setenv("TSD_SERV", "tsd_service")
+
 	configuration := NewConfiguration()
-	if configuration.GetTSDURL() != "tsd_base/tsd_ver/tsd_project/tsd_service" {
+	if configuration.GetTSDURL() != "tsd_base/v1/tsd_project/ega" {
 		t.Error()
 	}
 }
@@ -147,7 +146,5 @@ func teardown() {
 	_ = os.Unsetenv("LOCAL_EGA_INSTANCE_URL")
 	_ = os.Unsetenv("ELIXIR_AAI_TOKEN")
 	_ = os.Unsetenv("LEGA_COMMANDER_CHUNK_SIZE")
-	_ = os.Unsetenv("TSD_API_VER")
 	_ = os.Unsetenv("TSD_PROJ_NAME")
-	_ = os.Unsetenv("TSD_SERV")
 }
