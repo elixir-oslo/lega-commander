@@ -14,7 +14,7 @@ import (
 const defaultInstanceURL = "https://ega.elixir.no"
 const defaultTSDFileAPIVersion = "v1"
 const defaultTSDService = "ega"
-const defaultTSDProject = "p11"
+const defaultTSDProject = "p969"
 const defaultTSDfileAPIbaseURL = "https://api.tsd.usit.no"
 const defaultChunkSize = 50
 

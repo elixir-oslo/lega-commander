@@ -138,6 +138,12 @@ func TestNewConfigurationGetTSDURL(t *testing.T) {
 	if configuration.GetTSDURL() != "tsd_base/v1/tsd_project/ega" {
 		t.Error()
 	}
+	_ = os.Unsetenv("TSD_PROJ_NAME")
+	// default value for project name should be set when the env.var is empty
+	configuration = NewConfiguration()
+	if configuration.GetTSDURL() != "tsd_base/v1/p969/ega" {
+		t.Error()
+	}
 }
 
 func teardown() {
@@ -146,5 +152,5 @@ func teardown() {
 	_ = os.Unsetenv("LOCAL_EGA_INSTANCE_URL")
 	_ = os.Unsetenv("ELIXIR_AAI_TOKEN")
 	_ = os.Unsetenv("LEGA_COMMANDER_CHUNK_SIZE")
-	_ = os.Unsetenv("TSD_PROJ_NAME")
+
 }
