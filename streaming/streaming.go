@@ -143,8 +143,7 @@ func (s defaultStreamer) uploadFolder(folder *os.File, resume bool, proxy bool) 
 	}
 	return nil
 }
-
-func (s *defaultStreamer) uploadFileWithoutProxy(file *os.File, stat os.FileInfo, uploadID *string, offset, startChunk int64) error {
+func (s defaultStreamer) uploadFile(file *os.File, stat os.FileInfo, uploadID *string, offset, startChunk int64) error {
 	fileName := filepath.Base(file.Name())
 	filesList, err := s.fileManager.ListFiles(true)
 	if err != nil {
@@ -155,12 +154,6 @@ func (s *defaultStreamer) uploadFileWithoutProxy(file *os.File, stat os.FileInfo
 			return errors.New("File " + file.Name() + " is already uploaded. Please, remove it from the Inbox first: lega-commander files -d " + filepath.Base(uploadedFile.FileName))
 		}
 	}
-	configuration := conf.NewConfiguration()
-	streamurl := configuration.ConcatenateURLPartsToString(
-		[]string{
-			configuration.GetTSDURL(), s.claims["user"].(string), "files", url.QueryEscape(fileName),
-		},
-	)
 	if err = isCrypt4GHFile(file); err != nil {
 		return err
 	}
@@ -170,7 +163,7 @@ func (s *defaultStreamer) uploadFileWithoutProxy(file *os.File, stat os.FileInfo
 	bar.SetTotal(totalSize)
 	bar.SetCurrent(offset)
 	bar.Start()
-
+	configuration := conf.NewConfiguration()
 	_, err = file.Seek(offset, 0)
 	if err != nil {
 		return err
@@ -185,38 +178,24 @@ func (s *defaultStreamer) uploadFileWithoutProxy(file *os.File, stat os.FileInfo
 			break
 		}
 		chunk := buffer[:read]
-		// TokenIsExpired, err := s.checkTSDTokenIsExpired(configuration, s.claims["exp"].(float64))
-		// if err != nil {
-		// 	return err
-		// }
-		// if TokenIsExpired {
-		// 	s.tsd_token, s.claims, err = s.refreshTSDtoken(configuration, s.tsd_token)
-		// }
-		if err != nil {
-			return err
-		}
-		var response *http.Response
+		sum := md5.Sum(chunk)
+		params := map[string]string{
+			"chunk": strconv.FormatInt(i, 10),
+			"md5":   hex.EncodeToString(sum[:16])}
 		if i != 1 {
-			response, err = s.client.DoRequest(http.MethodPatch,
-				streamurl,
-				bytes.NewReader(chunk),
-				map[string]string{"Authorization": "Bearer " + s.tsd_token},
-				map[string]string{"id": *uploadID, "chunk": strconv.FormatInt(i, 10)},
-				"",
-				"")
-		} else {
-			response, err = s.client.DoRequest(http.MethodPatch,
-				streamurl,
-				bytes.NewReader(chunk),
-				map[string]string{"Authorization": "Bearer " + s.tsd_token},
-				map[string]string{"chunk": "1"},
-				"",
-				"")
+			params["uploadId"] = *uploadID
 		}
+		response, err := s.client.DoRequest(http.MethodPatch,
+			configuration.GetLocalEGAInstanceURL()+"/stream/"+url.QueryEscape(fileName),
+			bytes.NewReader(chunk),
+			map[string]string{"Proxy-Authorization": "Bearer " + configuration.GetElixirAAIToken()},
+			params,
+			configuration.GetCentralEGAUsername(),
+			configuration.GetCentralEGAPassword())
 		if err != nil {
 			return err
 		}
-		if !(response.StatusCode == 200 || response.StatusCode == 201) {
+		if response.StatusCode != 200 {
 			return errors.New(response.Status)
 		}
 		body, err := ioutil.ReadAll(response.Body)
@@ -242,18 +221,22 @@ func (s *defaultStreamer) uploadFileWithoutProxy(file *os.File, stat os.FileInfo
 	if err != nil {
 		return err
 	}
+	checksum := hex.EncodeToString(hashFunction.Sum(nil))
 	fmt.Println("assembling different parts of file together in order to make it! Duration varies based on filesize.")
 	response, err := s.client.DoRequest(http.MethodPatch,
-		streamurl,
+		configuration.GetLocalEGAInstanceURL()+"/stream/"+url.QueryEscape(fileName),
 		nil,
-		map[string]string{"Authorization": "Bearer " + s.tsd_token},
-		map[string]string{"id": *uploadID, "chunk": "end"},
-		"",
-		"")
+		map[string]string{"Proxy-Authorization": "Bearer " + configuration.GetElixirAAIToken()},
+		map[string]string{"uploadId": *uploadID,
+			"chunk":    "end",
+			"fileSize": strconv.FormatInt(totalSize, 10),
+			"sha256":   checksum},
+		configuration.GetCentralEGAUsername(),
+		configuration.GetCentralEGAPassword())
 	if err != nil {
 		return err
 	}
-	if !(response.StatusCode == 200 || response.StatusCode == 201) {
+	if response.StatusCode != 200 {
 		return errors.New(response.Status)
 	}
 	err = response.Body.Close()
@@ -427,7 +410,7 @@ func (s defaultStreamer) getTSDtoken(c conf.Configuration) (string, jwt.MapClaim
 
 // }
 
-func (s defaultStreamer) uploadFile(file *os.File, stat os.FileInfo, uploadID *string, offset, startChunk int64) error {
+func (s *defaultStreamer) uploadFileWithoutProxy(file *os.File, stat os.FileInfo, uploadID *string, offset, startChunk int64) error {
 	fileName := filepath.Base(file.Name())
 	filesList, err := s.fileManager.ListFiles(true)
 	if err != nil {
@@ -438,6 +421,12 @@ func (s defaultStreamer) uploadFile(file *os.File, stat os.FileInfo, uploadID *s
 			return errors.New("File " + file.Name() + " is already uploaded. Please, remove it from the Inbox first: lega-commander files -d " + filepath.Base(uploadedFile.FileName))
 		}
 	}
+	configuration := conf.NewConfiguration()
+	streamurl := configuration.ConcatenateURLPartsToString(
+		[]string{
+			configuration.GetTSDURL(), s.claims["user"].(string), "files", url.QueryEscape(fileName),
+		},
+	)
 	if err = isCrypt4GHFile(file); err != nil {
 		return err
 	}
@@ -447,7 +436,7 @@ func (s defaultStreamer) uploadFile(file *os.File, stat os.FileInfo, uploadID *s
 	bar.SetTotal(totalSize)
 	bar.SetCurrent(offset)
 	bar.Start()
-	configuration := conf.NewConfiguration()
+
 	_, err = file.Seek(offset, 0)
 	if err != nil {
 		return err
@@ -462,24 +451,38 @@ func (s defaultStreamer) uploadFile(file *os.File, stat os.FileInfo, uploadID *s
 			break
 		}
 		chunk := buffer[:read]
-		sum := md5.Sum(chunk)
-		params := map[string]string{
-			"chunk": strconv.FormatInt(i, 10),
-			"md5":   hex.EncodeToString(sum[:16])}
-		if i != 1 {
-			params["uploadId"] = *uploadID
-		}
-		response, err := s.client.DoRequest(http.MethodPatch,
-			configuration.GetLocalEGAInstanceURL()+"/stream/"+url.QueryEscape(fileName),
-			bytes.NewReader(chunk),
-			map[string]string{"Proxy-Authorization": "Bearer " + configuration.GetElixirAAIToken()},
-			params,
-			configuration.GetCentralEGAUsername(),
-			configuration.GetCentralEGAPassword())
+		// TokenIsExpired, err := s.checkTSDTokenIsExpired(configuration, s.claims["exp"].(float64))
+		// if err != nil {
+		// 	return err
+		// }
+		// if TokenIsExpired {
+		// 	s.tsd_token, s.claims, err = s.refreshTSDtoken(configuration, s.tsd_token)
+		// }
 		if err != nil {
 			return err
 		}
-		if response.StatusCode != 200 {
+		var response *http.Response
+		if i != 1 {
+			response, err = s.client.DoRequest(http.MethodPatch,
+				streamurl,
+				bytes.NewReader(chunk),
+				map[string]string{"Authorization": "Bearer " + s.tsd_token},
+				map[string]string{"id": *uploadID, "chunk": strconv.FormatInt(i, 10)},
+				"",
+				"")
+		} else {
+			response, err = s.client.DoRequest(http.MethodPatch,
+				streamurl,
+				bytes.NewReader(chunk),
+				map[string]string{"Authorization": "Bearer " + s.tsd_token},
+				map[string]string{"chunk": "1"},
+				"",
+				"")
+		}
+		if err != nil {
+			return err
+		}
+		if !(response.StatusCode == 200 || response.StatusCode == 201) {
 			return errors.New(response.Status)
 		}
 		body, err := ioutil.ReadAll(response.Body)
@@ -505,22 +508,18 @@ func (s defaultStreamer) uploadFile(file *os.File, stat os.FileInfo, uploadID *s
 	if err != nil {
 		return err
 	}
-	checksum := hex.EncodeToString(hashFunction.Sum(nil))
 	fmt.Println("assembling different parts of file together in order to make it! Duration varies based on filesize.")
 	response, err := s.client.DoRequest(http.MethodPatch,
-		configuration.GetLocalEGAInstanceURL()+"/stream/"+url.QueryEscape(fileName),
+		streamurl,
 		nil,
-		map[string]string{"Proxy-Authorization": "Bearer " + configuration.GetElixirAAIToken()},
-		map[string]string{"uploadId": *uploadID,
-			"chunk":    "end",
-			"fileSize": strconv.FormatInt(totalSize, 10),
-			"sha256":   checksum},
-		configuration.GetCentralEGAUsername(),
-		configuration.GetCentralEGAPassword())
+		map[string]string{"Authorization": "Bearer " + s.tsd_token},
+		map[string]string{"id": *uploadID, "chunk": "end"},
+		"",
+		"")
 	if err != nil {
 		return err
 	}
-	if response.StatusCode != 200 {
+	if !(response.StatusCode == 200 || response.StatusCode == 201) {
 		return errors.New(response.Status)
 	}
 	err = response.Body.Close()
