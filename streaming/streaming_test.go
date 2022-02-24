@@ -44,7 +44,7 @@ func setup() {
 	if err != nil {
 		log.Fatal(aurora.Red(err))
 	}
-	uploader, err = NewStreamer(&client, &filesManager, &resumablesManager)
+	uploader, err = NewStreamer(&client, &filesManager, &resumablesManager, true)
 	if err != nil {
 		log.Fatal(aurora.Red(err))
 	}
