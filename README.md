@@ -71,7 +71,7 @@ lega-commander [inbox | outbox | resumables | upload | download] <args>
  upload:
   -f, --file=FILE or =FOLDER    File or folder to upload
   -r, --resume                  Resumes interrupted upload
-  -p, --proxy                   Upload the files through the proxy service
+  -s, --straight                Upload the files without the proxy service;i.e. directly to tsd file api
 
  download:
   -f, --file= FILE or =FOLDER   File or folder to download

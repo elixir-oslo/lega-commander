@@ -30,8 +30,8 @@ import (
 
 // Streamer interface provides methods for uploading and downloading files from LocalEGA instance.
 type Streamer interface {
-	Upload(path string, resume bool, proxy bool) error
-	uploadFolder(folder *os.File, resume bool, proxy bool) error
+	Upload(path string, resume bool, straight bool) error
+	uploadFolder(folder *os.File, resume bool, straight bool) error
 	uploadFile(file *os.File, stat os.FileInfo, uploadID *string, offset int64, startChunk int64) error
 	Download(fileName string) error
 }
@@ -51,7 +51,7 @@ type ResponseJson struct {
 }
 
 // NewStreamer method constructs Streamer structure.
-func NewStreamer(client *requests.Client, fileManager *files.FileManager, resumablesManager *resuming.ResumablesManager, proxy bool) (Streamer, error) {
+func NewStreamer(client *requests.Client, fileManager *files.FileManager, resumablesManager *resuming.ResumablesManager, straight bool) (Streamer, error) {
 	streamer := defaultStreamer{}
 	if client != nil {
 		streamer.client = *client
@@ -78,7 +78,7 @@ func NewStreamer(client *requests.Client, fileManager *files.FileManager, resuma
 	}
 	configuration := conf.NewConfiguration()
 	var err error
-	if !proxy {
+	if straight {
 		streamer.tsd_token, streamer.claims, err = streamer.getTSDtoken(configuration)
 	}
 	if err != nil {
@@ -88,7 +88,7 @@ func NewStreamer(client *requests.Client, fileManager *files.FileManager, resuma
 }
 
 // Upload method uploads file or folder to LocalEGA.
-func (s defaultStreamer) Upload(path string, resume bool, proxy bool) error {
+func (s defaultStreamer) Upload(path string, resume bool, straight bool) error {
 	file, err := os.Open(path)
 	if err != nil {
 		return err
@@ -99,7 +99,7 @@ func (s defaultStreamer) Upload(path string, resume bool, proxy bool) error {
 		return err
 	}
 	if stat.IsDir() {
-		return s.uploadFolder(file, resume, proxy)
+		return s.uploadFolder(file, resume, straight)
 	}
 	if resume {
 		fileName := filepath.Base(file.Name())
@@ -109,7 +109,7 @@ func (s defaultStreamer) Upload(path string, resume bool, proxy bool) error {
 		}
 		for _, resumable := range *resumablesList {
 			if resumable.Name == fileName {
-				if proxy {
+				if !straight {
 					return s.uploadFile(file, stat, &resumable.ID, resumable.Size, resumable.Chunk)
 				} else {
 					return s.uploadFileWithoutProxy(file, stat, &resumable.ID, resumable.Size, resumable.Chunk)
@@ -119,14 +119,14 @@ func (s defaultStreamer) Upload(path string, resume bool, proxy bool) error {
 		}
 		return nil
 	}
-	if proxy {
+	if !straight {
 		return s.uploadFile(file, stat, nil, 0, 1)
 	} else {
 		return s.uploadFileWithoutProxy(file, stat, nil, 0, 1)
 	}
 }
 
-func (s defaultStreamer) uploadFolder(folder *os.File, resume bool, proxy bool) error {
+func (s defaultStreamer) uploadFolder(folder *os.File, resume bool, straight bool) error {
 	readdir, err := folder.Readdir(-1)
 	if err != nil {
 		return err
@@ -136,7 +136,7 @@ func (s defaultStreamer) uploadFolder(folder *os.File, resume bool, proxy bool) 
 		if err != nil {
 			return err
 		}
-		err = s.Upload(abs, resume, proxy)
+		err = s.Upload(abs, resume, straight)
 		if err != nil {
 			return err
 		}
