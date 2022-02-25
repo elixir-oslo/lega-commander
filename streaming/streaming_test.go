@@ -144,14 +144,14 @@ func TestUploadFolder(t *testing.T) {
 }
 
 func TestDownloadFileRemoteDoesntExist(t *testing.T) {
-	err := uploader.Download("test.enc")
+	err := uploader.Download("notfoundfile.enc", false)
 	if err == nil || !strings.HasSuffix(err.Error(), "not found in the outbox.") {
 		t.Error(err)
 	}
 }
 
 func TestDownloadFileRemoteExists(t *testing.T) {
-	err := uploader.Download("test2.enc")
+	err := uploader.Download("test2.enc", false)
 	if err != nil {
 		t.Error(err)
 	}
@@ -175,7 +175,7 @@ func TestDownloadFileLocalExists(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	err = uploader.Download("test2.enc")
+	err = uploader.Download("test2.enc", false)
 	if err == nil || !strings.HasSuffix(err.Error(), "exists locally, aborting.") {
 		t.Error(err)
 	}
