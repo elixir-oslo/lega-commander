@@ -52,7 +52,7 @@ Table below shows how there variables must be set:
 
 ## Usage
 
-> For the time being, all of **upload** and **download** commands **must** be run with `-p` argument.
+> For the time being, all of **upload** and **download** commands **should** not run with `-s` argument.
 ```
 $ lega-commander
 lega-commander [inbox | outbox | resumables | upload | download] <args>
@@ -84,15 +84,15 @@ or `D:\path\to\a\c4gh\file`, we wil do it with commands below based on operating
 
 **In linux or macos**:
 ```
-lega-commander upload  -p  -f /path/to/a/c4gh/file/sample-c4gh-file.c4gh 
+lega-commander upload   -f /path/to/a/c4gh/file/sample-c4gh-file.c4gh 
  ```
 **In windows** (in the case that lega-commander binary [dowloaded from release page] is in `D:\users\lega-commander` folder):
 ```
-D:\users\lega-commander upload  -p  -f D:\path\to\a\c4gh\file\sample-c4gh-file.c4gh 
+D:\users\lega-commander upload  -f D:\path\to\a\c4gh\file\sample-c4gh-file.c4gh 
  ```
 or if we want to upload a folder with path of `/path/to/a/folder/containing/c4gh/files`
 that contains c4gh files, we can use this example command:
 
 ```
-lega-commander upload  -p  -f /path/to/a/folder/containing/c4gh/files
+lega-commander upload  -f /path/to/a/folder/containing/c4gh/files
 ```
