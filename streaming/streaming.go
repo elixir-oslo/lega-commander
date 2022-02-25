@@ -33,7 +33,7 @@ type Streamer interface {
 	Upload(path string, resume bool, straight bool) error
 	uploadFolder(folder *os.File, resume bool, straight bool) error
 	uploadFile(file *os.File, stat os.FileInfo, uploadID *string, offset int64, startChunk int64) error
-	Download(fileName string) error
+	Download(fileName string, straight bool) error
 }
 
 type defaultStreamer struct {
@@ -265,7 +265,7 @@ func isCrypt4GHFile(file *os.File) error {
 }
 
 // Download method downloads file from LocalEGA.
-func (s defaultStreamer) Download(fileName string) error {
+func (s defaultStreamer) Download(fileName string, straight bool) error {
 	if fileExists(fileName) {
 		return errors.New("File " + fileName + " exists locally, aborting.")
 	}
@@ -293,13 +293,30 @@ func (s defaultStreamer) Download(fileName string) error {
 	fmt.Println(aurora.Blue("Downloading file: " + file.Name() + " (" + strconv.FormatInt(fileSize, 10) + " bytes)"))
 	bar := pb.Start64(fileSize)
 	configuration := conf.NewConfiguration()
-	response, err := s.client.DoRequest(http.MethodGet,
-		configuration.GetLocalEGAInstanceURL()+"/stream/"+url.QueryEscape(fileName),
-		nil,
-		map[string]string{"Proxy-Authorization": "Bearer " + configuration.GetElixirAAIToken()},
-		map[string]string{"fileName": fileName},
-		"",
-		"")
+	var response *http.Response
+
+	if straight {
+		downloadstreamurl := configuration.ConcatenateURLPartsToString(
+			[]string{
+				configuration.GetTSDURLDownload(), s.claims["user"].(string), "files", url.QueryEscape(fileName),
+			},
+		)
+		response, err = s.client.DoRequest(http.MethodGet,
+			downloadstreamurl,
+			nil,
+			map[string]string{"Authorization": "Bearer " + s.tsd_token},
+			map[string]string{"fileName": fileName},
+			"",
+			"")
+	} else {
+		response, err = s.client.DoRequest(http.MethodGet,
+			configuration.GetLocalEGAInstanceURL()+"/stream/"+url.QueryEscape(fileName),
+			nil,
+			map[string]string{"Proxy-Authorization": "Bearer " + configuration.GetElixirAAIToken()},
+			map[string]string{"fileName": fileName},
+			"",
+			"")
+	}
 	if err != nil {
 		return err
 	}
