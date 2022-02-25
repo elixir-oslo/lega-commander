@@ -61,7 +61,7 @@ var uploadingOptionsParser = flags.NewParser(&uploadingOptions, flags.None)
 
 var downloadingOptions struct {
 	FileName string `short:"f"  long:"file" description:"File to download\t[optional]"`
-	Proxy    bool   `short:"p" long:"proxy" description:"download the files through the proxy service"`
+	Straight bool   `short:"s" long:"straight" description:"download the files without the proxy service;i.e. directly from tsd file api"`
 }
 
 var downloadingOptionsParser = flags.NewParser(&downloadingOptions, flags.None)
@@ -215,7 +215,7 @@ func main() {
 		if err != nil {
 			log.Fatal(aurora.Red(err))
 		}
-		streamer, err := streaming.NewStreamer(nil, nil, nil, downloadingOptions.Proxy)
+		streamer, err := streaming.NewStreamer(nil, nil, nil, downloadingOptions.Straight)
 		if err != nil {
 			log.Fatal(aurora.Red(err))
 		}
@@ -226,13 +226,13 @@ func main() {
 				log.Fatal(aurora.Red(err))
 			}
 			for _, file := range *fileList {
-				err = streamer.Download(file.FileName)
+				err = streamer.Download(file.FileName, downloadingOptions.Straight)
 				if err != nil {
 					log.Fatal(aurora.Red(err))
 				}
 			}
 		} else {
-			err = streamer.Download(downloadingOptions.FileName)
+			err = streamer.Download(downloadingOptions.FileName, downloadingOptions.Straight)
 			if err != nil {
 				log.Fatal(aurora.Red(err))
 			}
