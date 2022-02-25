@@ -75,7 +75,7 @@ lega-commander [inbox | outbox | resumables | upload | download] <args>
 
  download:
   -f, --file= FILE or =FOLDER   File or folder to download
-  -p, --proxy                   Download the files through the proxy service
+  -s, --straight                Download the files without the proxy service;i.e. directly from tsd file api
 
 ```
 ### Example Usage
