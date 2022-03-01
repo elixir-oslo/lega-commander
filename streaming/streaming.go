@@ -109,7 +109,12 @@ func (s defaultStreamer) Upload(path string, resume bool, straight bool) error {
 		}
 		for _, resumable := range *resumablesList {
 			if resumable.Name == fileName {
-				return s.uploadFile(file, stat, &resumable.ID, resumable.Size, resumable.Chunk)
+				if !straight {
+					return s.uploadFile(file, stat, &resumable.ID, resumable.Size, resumable.Chunk)
+				} else {
+					return s.uploadFileWithoutProxy(file, stat, &resumable.ID, resumable.Size, resumable.Chunk)
+				}
+
 			}
 		}
 		return nil
