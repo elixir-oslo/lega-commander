@@ -320,3 +320,47 @@ func fileExists(fileName string) bool {
 	}
 	return !info.IsDir()
 }
+
+func extractTheClaimsOutOfTSDToken(response *http.Response) (string, jwt.MapClaims, error) {
+	if response.StatusCode != 200 {
+		return "", nil, errors.New(response.Status)
+	}
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return "", nil, err
+	}
+
+	tsd_token := string(body)
+	var respjson ResponseJson
+	err = json.Unmarshal(body, &respjson)
+	if err != nil {
+		return "", nil, err
+	}
+	err = response.Body.Close()
+	if err != nil {
+		return "", nil, err
+	}
+
+	claims := jwt.MapClaims{}
+	jwt.ParseWithClaims(respjson.Token, claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(""), nil
+	})
+	return tsd_token, claims, nil
+}
+
+func (s defaultStreamer) getTSDtoken(c conf.Configuration) (string, jwt.MapClaims, error) {
+	fmt.Println("asking for tsd connection details from proxy service...")
+	// var response *http.Response
+	// var err error
+	response, err := s.client.DoRequest(http.MethodGet,
+		c.GetLocalEGAInstanceURL()+"/gettoken",
+		nil,
+		map[string]string{"Proxy-Authorization": "Bearer " + c.GetElixirAAIToken()},
+		nil,
+		c.GetCentralEGAUsername(),
+		c.GetCentralEGAPassword())
+	if err != nil {
+		return "", nil, err
+	}
+	return extractTheClaimsOutOfTSDToken(response)
+}
