@@ -2,12 +2,13 @@
 package conf
 
 import (
-	"github.com/logrusorgru/aurora"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
+
+	aurora "github.com/logrusorgru/aurora/v3"
 )
 
 const defaultInstanceURL = "https://ega.elixir.no"
