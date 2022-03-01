@@ -44,7 +44,7 @@ func setup() {
 	if err != nil {
 		log.Fatal(aurora.Red(err))
 	}
-	uploader, err = NewStreamer(&client, &filesManager, &resumablesManager)
+	uploader, err = NewStreamer(&client, &filesManager, &resumablesManager, false)
 	if err != nil {
 		log.Fatal(aurora.Red(err))
 	}
@@ -123,21 +123,21 @@ func (mockClient) DoRequest(method, url string, _ io.Reader, headers, params map
 }
 
 func TestUploadedFileExists(t *testing.T) {
-	err := uploader.Upload(existingFile.Name(), false)
+	err := uploader.Upload(existingFile.Name(), false, false)
 	if err == nil {
 		t.Error()
 	}
 }
 
 func TestUploadFile(t *testing.T) {
-	err := uploader.Upload(file.Name(), false)
+	err := uploader.Upload(file.Name(), false, false)
 	if err != nil {
 		t.Error(err)
 	}
 }
 
 func TestUploadFolder(t *testing.T) {
-	err := uploader.Upload(dir, false)
+	err := uploader.Upload(dir, false, false)
 	if err == nil || !strings.HasSuffix(err.Error(), "not a Crypt4GH file") {
 		t.Error(err)
 	}
