@@ -423,6 +423,13 @@ func (s *defaultStreamer) uploadFileWithoutProxy(file *os.File, stat os.FileInfo
 			break
 		}
 		chunk := buffer[:read]
+		TokenIsExpired, err := s.checkTSDTokenIsExpired(configuration, s.claims["exp"].(float64))
+		if err != nil {
+			return err
+		}
+		if TokenIsExpired {
+			s.tsd_token, s.claims, err = s.refreshTSDtoken(configuration, s.tsd_token)
+		}
 		if err != nil {
 			return err
 		}
