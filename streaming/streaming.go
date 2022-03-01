@@ -119,7 +119,11 @@ func (s defaultStreamer) Upload(path string, resume bool, straight bool) error {
 		}
 		return nil
 	}
-	return s.uploadFile(file, stat, nil, 0, 1)
+	if !straight {
+		return s.uploadFile(file, stat, nil, 0, 1)
+	} else {
+		return s.uploadFileWithoutProxy(file, stat, nil, 0, 1)
+	}
 }
 
 func (s defaultStreamer) uploadFolder(folder *os.File, resume bool) error {
