@@ -144,7 +144,7 @@ func TestUploadFolder(t *testing.T) {
 }
 
 func TestDownloadFileRemoteDoesntExist(t *testing.T) {
-	err := uploader.Download("test.enc")
+	err := uploader.Download("notfoundfile.enc")
 	if err == nil || !strings.HasSuffix(err.Error(), "not found in the outbox.") {
 		t.Error(err)
 	}
