@@ -61,6 +61,7 @@ var uploadingOptionsParser = flags.NewParser(&uploadingOptions, flags.None)
 
 var downloadingOptions struct {
 	FileName string `short:"f"  long:"file" description:"File to download\t[optional]"`
+	Straight bool   `short:"s" long:"straight" description:"download the files without the proxy service;i.e. directly from tsd file api"`
 }
 
 var downloadingOptionsParser = flags.NewParser(&downloadingOptions, flags.None)
