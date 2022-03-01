@@ -5,16 +5,17 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/elixir-oslo/lega-commander/files"
-	"github.com/elixir-oslo/lega-commander/resuming"
-	"github.com/elixir-oslo/lega-commander/streaming"
-	"github.com/jessevdk/go-flags"
-	"github.com/logrusorgru/aurora"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 	"text/tabwriter"
+
+	"github.com/elixir-oslo/lega-commander/files"
+	"github.com/elixir-oslo/lega-commander/resuming"
+	"github.com/elixir-oslo/lega-commander/streaming"
+	"github.com/jessevdk/go-flags"
+	aurora "github.com/logrusorgru/aurora/v3"
 )
 
 var (
