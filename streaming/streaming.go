@@ -40,6 +40,14 @@ type defaultStreamer struct {
 	client            requests.Client
 	fileManager       files.FileManager
 	resumablesManager resuming.ResumablesManager
+	tsd_token         string
+	claims            jwt.MapClaims
+}
+type ResponseJson struct {
+	// defining token response that comes from tsd proxy
+	StatusCode int    `json:"statusCode"`
+	StatusText string `json:"statusText"`
+	Token      string `json:"token"`
 }
 
 // NewStreamer method constructs Streamer structure.
