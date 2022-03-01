@@ -36,6 +36,11 @@ type Configuration interface {
 	GetChunkSize() int
 }
 
+func (dc defaultConfiguration) ConcatenateURLPartsToString(array []string) string {
+	str := strings.Join(array, "/")
+	return str
+}
+
 // defaultConfiguration structure is a default implementation of the Configuration interface.
 type defaultConfiguration struct {
 }
