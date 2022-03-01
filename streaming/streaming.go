@@ -501,3 +501,17 @@ func (s *defaultStreamer) uploadFileWithoutProxy(file *os.File, stat os.FileInfo
 	bar.Finish()
 	return nil
 }
+func (s *defaultStreamer) refreshTSDtoken(c conf.Configuration, token string) (string, jwt.MapClaims, error) {
+	fmt.Println("tsd connection details is expired! now refreshing connection details by asking it from proxy service...")
+	response, err := s.client.DoRequest(http.MethodGet,
+		c.GetLocalEGAInstanceURL()+"/refreshtoken",
+		nil,
+		map[string]string{"Expired-Token": token},
+		nil,
+		"",
+		"")
+	if err != nil {
+		return "", nil, err
+	}
+	return extractTheClaimsOutOfTSDToken(response)
+}
