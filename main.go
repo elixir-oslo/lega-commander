@@ -215,7 +215,7 @@ func main() {
 		if err != nil {
 			log.Fatal(aurora.Red(err))
 		}
-		streamer, err := streaming.NewStreamer(nil, nil, nil)
+		streamer, err := streaming.NewStreamer(nil, nil, nil, downloadingOptions.Straight)
 		if err != nil {
 			log.Fatal(aurora.Red(err))
 		}
