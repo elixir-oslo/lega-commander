@@ -99,27 +99,19 @@ func (dc defaultConfiguration) GetTSDbaseURL() string {
 }
 
 func (dc defaultConfiguration) GetTSDAPIVersion() string {
-	tsdVersion := os.Getenv("TSD_API_VER")
-	if tsdVersion == "" {
-		log.Fatal(aurora.Red("TSD_API_VER environment variable is not set"))
-	}
-	return tsdVersion
+	return defaultTSDFileAPIVersion
 }
 
 func (dc defaultConfiguration) GetTSDProjectName() string {
 	tsdProject := os.Getenv("TSD_PROJ_NAME")
 	if tsdProject == "" {
-		log.Fatal(aurora.Red("TSD_PROJ_NAME environment variable is not set"))
+		tsdProject = defaultTSDProject
 	}
 	return tsdProject
 }
 
 func (dc defaultConfiguration) GetTSDservice() string {
-	tsdService := os.Getenv("TSD_SERV")
-	if tsdService == "" {
-		log.Fatal(aurora.Red("TSD_SERV environment variable is not set"))
-	}
-	return tsdService
+	return defaultTSDService
 }
 
 func (dc defaultConfiguration) GetChunkSize() int {
