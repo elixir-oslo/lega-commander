@@ -16,6 +16,8 @@ func setup() {
 	_ = os.Setenv("CENTRAL_EGA_USERNAME", "1")
 	_ = os.Setenv("CENTRAL_EGA_PASSWORD", "2")
 	_ = os.Setenv("ELIXIR_AAI_TOKEN", "3")
+	_ = os.Setenv("TSD_PROJ_NAME", "5")
+	_ = os.Setenv("TSD_SERV", "6")
 }
 
 func TestNewConfigurationSameInstance(t *testing.T) {
@@ -45,6 +47,25 @@ func TestGetCentralEGAPassword(t *testing.T) {
 func TestGetElixirAAIToken(t *testing.T) {
 	configuration := NewConfiguration()
 	if configuration.GetElixirAAIToken() != "3" {
+		t.Error()
+	}
+}
+
+func TestGetTSDAPIVersion(t *testing.T) {
+	configuration := NewConfiguration()
+	if configuration.GetTSDAPIVersion() != "v1" {
+		t.Error()
+	}
+}
+func TestGetTSDProjectName(t *testing.T) {
+	configuration := NewConfiguration()
+	if configuration.GetTSDProjectName() != "5" {
+		t.Error()
+	}
+}
+func TestGetTSDservice(t *testing.T) {
+	configuration := NewConfiguration()
+	if configuration.GetTSDservice() != "ega" {
 		t.Error()
 	}
 }
