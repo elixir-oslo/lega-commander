@@ -99,7 +99,7 @@ func (s defaultStreamer) Upload(path string, resume bool, straight bool) error {
 		return err
 	}
 	if stat.IsDir() {
-		return s.uploadFolder(file, resume)
+		return s.uploadFolder(file, resume, straight)
 	}
 	if resume {
 		fileName := filepath.Base(file.Name())
