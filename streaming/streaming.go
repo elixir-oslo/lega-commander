@@ -88,7 +88,7 @@ func NewStreamer(client *requests.Client, fileManager *files.FileManager, resuma
 }
 
 // Upload method uploads file or folder to LocalEGA.
-func (s defaultStreamer) Upload(path string, resume bool) error {
+func (s defaultStreamer) Upload(path string, resume bool, straight bool) error {
 	file, err := os.Open(path)
 	if err != nil {
 		return err
