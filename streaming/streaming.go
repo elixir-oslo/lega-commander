@@ -76,6 +76,14 @@ func NewStreamer(client *requests.Client, fileManager *files.FileManager, resuma
 		}
 		streamer.resumablesManager = newResumablesManager
 	}
+	configuration := conf.NewConfiguration()
+	var err error
+	if straight {
+		streamer.tsd_token, streamer.claims, err = streamer.getTSDtoken(configuration)
+	}
+	if err != nil {
+		return nil, err
+	}
 	return streamer, nil
 }
 
