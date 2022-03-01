@@ -23,6 +23,12 @@ var instance *defaultConfiguration
 
 // Configuration interface is a holder for application settings.
 type Configuration interface {
+	ConcatenateURLPartsToString(array []string) string
+	GetTSDbaseURL() string
+	GetTSDAPIVersion() string
+	GetTSDProjectName() string
+	GetTSDservice() string
+	GetTSDURL() string
 	GetCentralEGAUsername() string
 	GetCentralEGAPassword() string
 	GetLocalEGAInstanceURL() string
