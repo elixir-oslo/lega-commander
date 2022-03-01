@@ -33,7 +33,7 @@ type Streamer interface {
 	Upload(path string, resume bool, straight bool) error
 	uploadFolder(folder *os.File, resume bool, straight bool) error
 	uploadFile(file *os.File, stat os.FileInfo, uploadID *string, offset int64, startChunk int64) error
-	Download(fileName string) error
+	Download(fileName string, straight bool) error
 }
 
 type defaultStreamer struct {
@@ -266,7 +266,7 @@ func isCrypt4GHFile(file *os.File) error {
 }
 
 // Download method downloads file from LocalEGA.
-func (s defaultStreamer) Download(fileName string) error {
+func (s defaultStreamer) Download(fileName string, straight bool) error {
 	if fileExists(fileName) {
 		return errors.New("File " + fileName + " exists locally, aborting.")
 	}
