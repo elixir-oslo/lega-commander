@@ -364,3 +364,116 @@ func (s defaultStreamer) getTSDtoken(c conf.Configuration) (string, jwt.MapClaim
 	}
 	return extractTheClaimsOutOfTSDToken(response)
 }
+
+func (s *defaultStreamer) uploadFileWithoutProxy(file *os.File, stat os.FileInfo, uploadID *string, offset, startChunk int64) error {
+	fileName := filepath.Base(file.Name())
+	filesList, err := s.fileManager.ListFiles(true)
+	if err != nil {
+		return err
+	}
+	for _, uploadedFile := range *filesList {
+		if fileName == filepath.Base(uploadedFile.FileName) {
+			return errors.New("File " + file.Name() + " is already uploaded. Please, remove it from the Inbox first: lega-commander files -d " + filepath.Base(uploadedFile.FileName))
+		}
+	}
+	configuration := conf.NewConfiguration()
+	streamurl := configuration.ConcatenateURLPartsToString(
+		[]string{
+			configuration.GetTSDURL(), s.claims["user"].(string), "files", url.QueryEscape(fileName),
+		},
+	)
+	if err = isCrypt4GHFile(file); err != nil {
+		return err
+	}
+	totalSize := stat.Size()
+	fmt.Println(aurora.Blue("Uploading file: " + file.Name() + " (" + strconv.FormatInt(totalSize, 10) + " bytes)"))
+	bar := pb.StartNew(100)
+	bar.SetTotal(totalSize)
+	bar.SetCurrent(offset)
+	bar.Start()
+
+	_, err = file.Seek(offset, 0)
+	if err != nil {
+		return err
+	}
+	buffer := make([]byte, configuration.GetChunkSize()*1024*1024)
+	for i := startChunk; true; i++ {
+		read, err := file.Read(buffer)
+		if err != nil {
+			if err != io.EOF {
+				return err
+			}
+			break
+		}
+		chunk := buffer[:read]
+		if err != nil {
+			return err
+		}
+		var response *http.Response
+		if i != 1 {
+			response, err = s.client.DoRequest(http.MethodPatch,
+				streamurl,
+				bytes.NewReader(chunk),
+				map[string]string{"Authorization": "Bearer " + s.tsd_token},
+				map[string]string{"id": *uploadID, "chunk": strconv.FormatInt(i, 10)},
+				"",
+				"")
+		} else {
+			response, err = s.client.DoRequest(http.MethodPatch,
+				streamurl,
+				bytes.NewReader(chunk),
+				map[string]string{"Authorization": "Bearer " + s.tsd_token},
+				map[string]string{"chunk": "1"},
+				"",
+				"")
+		}
+		if err != nil {
+			return err
+		}
+		if !(response.StatusCode == 200 || response.StatusCode == 201) {
+			return errors.New(response.Status)
+		}
+		body, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			return err
+		}
+		err = response.Body.Close()
+		if err != nil {
+			return err
+		}
+		if uploadID == nil {
+			uploadID = new(string)
+		}
+		*uploadID, err = jsonparser.GetString(body, "id")
+		if err != nil {
+			return err
+		}
+		bar.SetCurrent(int64(read)*(i-startChunk+1) + offset)
+	}
+	bar.SetCurrent(totalSize)
+	hashFunction := sha256.New()
+	_, err = io.Copy(hashFunction, file)
+	if err != nil {
+		return err
+	}
+	fmt.Println("assembling different parts of file together in order to make it! Duration varies based on filesize.")
+	response, err := s.client.DoRequest(http.MethodPatch,
+		streamurl,
+		nil,
+		map[string]string{"Authorization": "Bearer " + s.tsd_token},
+		map[string]string{"id": *uploadID, "chunk": "end"},
+		"",
+		"")
+	if err != nil {
+		return err
+	}
+	if !(response.StatusCode == 200 || response.StatusCode == 201) {
+		return errors.New(response.Status)
+	}
+	err = response.Body.Close()
+	if err != nil {
+		return err
+	}
+	bar.Finish()
+	return nil
+}
