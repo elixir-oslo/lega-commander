@@ -126,7 +126,7 @@ func (s defaultStreamer) Upload(path string, resume bool, straight bool) error {
 	}
 }
 
-func (s defaultStreamer) uploadFolder(folder *os.File, resume bool) error {
+func (s defaultStreamer) uploadFolder(folder *os.File, resume bool, straight bool) error {
 	readdir, err := folder.Readdir(-1)
 	if err != nil {
 		return err
