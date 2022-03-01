@@ -133,7 +133,8 @@ func (s defaultStreamer) uploadFile(file *os.File, stat os.FileInfo, uploadID *s
 	totalSize := stat.Size()
 	fmt.Println(aurora.Blue("Uploading file: " + file.Name() + " (" + strconv.FormatInt(totalSize, 10) + " bytes)"))
 	bar := pb.StartNew(100)
-	bar.SetCurrent(offset * 100 / totalSize)
+	bar.SetTotal(totalSize)
+	bar.SetCurrent(offset)
 	bar.Start()
 	configuration := conf.NewConfiguration()
 	_, err = file.Seek(offset, 0)
@@ -185,15 +186,16 @@ func (s defaultStreamer) uploadFile(file *os.File, stat os.FileInfo, uploadID *s
 		if err != nil {
 			return err
 		}
-		bar.Add64(int64(read) * 100 / totalSize)
+		bar.SetCurrent(int64(read)*(i-startChunk+1) + offset)
 	}
-	bar.SetCurrent(100)
+	bar.SetCurrent(totalSize)
 	hashFunction := sha256.New()
 	_, err = io.Copy(hashFunction, file)
 	if err != nil {
 		return err
 	}
 	checksum := hex.EncodeToString(hashFunction.Sum(nil))
+	fmt.Println("assembling different parts of file together in order to make it! Duration varies based on filesize.")
 	response, err := s.client.DoRequest(http.MethodPatch,
 		configuration.GetLocalEGAInstanceURL()+"/stream/"+url.QueryEscape(fileName),
 		nil,
