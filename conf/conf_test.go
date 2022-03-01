@@ -85,6 +85,22 @@ func TestNewConfigurationNonDefaultInstanceURL(t *testing.T) {
 	}
 }
 
+func TestNewConfigurationDefaultTSDbaseURL(t *testing.T) {
+	configuration := NewConfiguration()
+	if configuration.GetTSDbaseURL() != defaultTSDfileAPIbaseURL {
+		t.Error()
+	}
+}
+
+func TestNewConfigurationNonDefaultTSDbaseURL(t *testing.T) {
+	_ = os.Setenv("TSD_BASE_URL", "test/tsd_base/")
+	configuration := NewConfiguration()
+	if configuration.GetTSDbaseURL() != "test/tsd_base" {
+		t.Error()
+	}
+}
+
+
 func TestNewConfigurationDefaultChunkSize(t *testing.T) {
 	configuration := NewConfiguration()
 	if configuration.GetChunkSize() != defaultChunkSize {
