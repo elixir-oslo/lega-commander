@@ -117,8 +117,6 @@ func (dc defaultConfiguration) GetTSDservice() string {
 	return defaultTSDService
 }
 
-
-
 func (dc defaultConfiguration) GetTSDserviceDownload() string {
 	return defaultTSDServiceDownload
 }
