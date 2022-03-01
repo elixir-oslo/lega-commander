@@ -30,8 +30,8 @@ import (
 
 // Streamer interface provides methods for uploading and downloading files from LocalEGA instance.
 type Streamer interface {
-	Upload(path string, resume bool) error
-	uploadFolder(folder *os.File, resume bool) error
+	Upload(path string, resume bool, straight bool) error
+	uploadFolder(folder *os.File, resume bool, straight bool) error
 	uploadFile(file *os.File, stat os.FileInfo, uploadID *string, offset int64, startChunk int64) error
 	Download(fileName string) error
 }
