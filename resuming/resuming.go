@@ -3,11 +3,12 @@ package resuming
 
 import (
 	"errors"
+	"io/ioutil"
+	"net/http"
+
 	"github.com/buger/jsonparser"
 	"github.com/elixir-oslo/lega-commander/conf"
 	"github.com/elixir-oslo/lega-commander/requests"
-	"io/ioutil"
-	"net/http"
 )
 
 // Resumable structure represents resumable upload.
