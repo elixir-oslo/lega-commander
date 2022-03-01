@@ -80,6 +80,48 @@ func (dc defaultConfiguration) GetElixirAAIToken() string {
 	return elixirAAIToken
 }
 
+func (dc defaultConfiguration) GetTSDURL() string {
+	return dc.ConcatenateURLPartsToString(
+		[]string{
+			dc.GetTSDbaseURL(), dc.GetTSDAPIVersion(), dc.GetTSDProjectName(), dc.GetTSDservice()},
+	)
+}
+
+func (dc defaultConfiguration) GetTSDbaseURL() string {
+	TSDbaseURL := os.Getenv("TSD_BASE_URL")
+	if TSDbaseURL == "" {
+		TSDbaseURL = defaultTSDfileAPIbaseURL
+	}
+	if strings.HasSuffix(TSDbaseURL, "/") {
+		return TSDbaseURL[:len(TSDbaseURL)-1]
+	}
+	return TSDbaseURL
+}
+
+func (dc defaultConfiguration) GetTSDAPIVersion() string {
+	tsdVersion := os.Getenv("TSD_API_VER")
+	if tsdVersion == "" {
+		log.Fatal(aurora.Red("TSD_API_VER environment variable is not set"))
+	}
+	return tsdVersion
+}
+
+func (dc defaultConfiguration) GetTSDProjectName() string {
+	tsdProject := os.Getenv("TSD_PROJ_NAME")
+	if tsdProject == "" {
+		log.Fatal(aurora.Red("TSD_PROJ_NAME environment variable is not set"))
+	}
+	return tsdProject
+}
+
+func (dc defaultConfiguration) GetTSDservice() string {
+	tsdService := os.Getenv("TSD_SERV")
+	if tsdService == "" {
+		log.Fatal(aurora.Red("TSD_SERV environment variable is not set"))
+	}
+	return tsdService
+}
+
 func (dc defaultConfiguration) GetChunkSize() int {
 	chunkSize := os.Getenv("LEGA_COMMANDER_CHUNK_SIZE")
 	if chunkSize == "" {
