@@ -54,6 +54,7 @@ var resumablesOptionsParser = flags.NewParser(&resumablesOptions, flags.None)
 var uploadingOptions struct {
 	FileName string `short:"f"  long:"file" description:"File or folder to upload" value-name:"FILE" required:"true"`
 	Resume   bool   `short:"r" long:"resume" description:"Resumes interrupted upload"`
+	Straight bool   `short:"s" long:"straight" description:"Upload the files without the proxy service;i.e. directly to tsd file api"`
 }
 
 var uploadingOptionsParser = flags.NewParser(&uploadingOptions, flags.None)
@@ -200,11 +201,11 @@ func main() {
 		if err != nil {
 			log.Fatal(aurora.Red(err))
 		}
-		streamer, err := streaming.NewStreamer(nil, nil, nil)
+		streamer, err := streaming.NewStreamer(nil, nil, nil, uploadingOptions.Straight)
 		if err != nil {
 			log.Fatal(aurora.Red(err))
 		}
-		err = streamer.Upload(uploadingOptions.FileName, uploadingOptions.Resume)
+		err = streamer.Upload(uploadingOptions.FileName, uploadingOptions.Resume, uploadingOptions.Straight)
 		if err != nil {
 			log.Fatal(aurora.Red(err))
 		}
