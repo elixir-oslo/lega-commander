@@ -86,6 +86,24 @@ func TestNewConfigurationNonNumericChunkSize(t *testing.T) {
 		t.Error()
 	}
 }
+func TestNewConfigurationGetTSDURL(t *testing.T) {
+	_ = os.Setenv("TSD_BASE_URL", "tsd_base/")
+
+	_ = os.Setenv("TSD_PROJ_NAME", "tsd_project")
+
+	configuration := NewConfiguration()
+	if configuration.GetTSDURL() != "tsd_base/v1/tsd_project/ega" {
+		t.Error()
+	}
+	_ = os.Unsetenv("TSD_PROJ_NAME")
+	// default value for project name should be set when the env.var is empty
+	configuration = NewConfiguration()
+	if configuration.GetTSDURL() != "tsd_base/v1/p969/ega" {
+		t.Error()
+	}
+}
+
+
 
 func teardown() {
 	_ = os.Unsetenv("CENTRAL_EGA_USERNAME")
