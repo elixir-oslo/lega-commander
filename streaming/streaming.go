@@ -136,7 +136,7 @@ func (s defaultStreamer) uploadFolder(folder *os.File, resume bool, straight boo
 		if err != nil {
 			return err
 		}
-		err = s.Upload(abs, resume)
+		err = s.Upload(abs, resume, straight)
 		if err != nil {
 			return err
 		}
