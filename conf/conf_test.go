@@ -106,7 +106,6 @@ func TestNewConfigurationNonDefaultTSDbaseURL(t *testing.T) {
 	}
 }
 
-
 func TestNewConfigurationDefaultChunkSize(t *testing.T) {
 	configuration := NewConfiguration()
 	if configuration.GetChunkSize() != defaultChunkSize {
