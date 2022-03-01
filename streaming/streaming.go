@@ -51,7 +51,7 @@ type ResponseJson struct {
 }
 
 // NewStreamer method constructs Streamer structure.
-func NewStreamer(client *requests.Client, fileManager *files.FileManager, resumablesManager *resuming.ResumablesManager) (Streamer, error) {
+func NewStreamer(client *requests.Client, fileManager *files.FileManager, resumablesManager *resuming.ResumablesManager, straight bool) (Streamer, error) {
 	streamer := defaultStreamer{}
 	if client != nil {
 		streamer.client = *client
