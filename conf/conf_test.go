@@ -70,6 +70,12 @@ func TestGetTSDservice(t *testing.T) {
 	}
 }
 
+func TestGetTSDservicedownload(t *testing.T) {
+	configuration := NewConfiguration()
+	if configuration.GetTSDserviceDownload() != "egaout" {
+		t.Error()
+	}
+}
 func TestNewConfigurationDefaultInstanceURL(t *testing.T) {
 	configuration := NewConfiguration()
 	if configuration.GetLocalEGAInstanceURL() != defaultInstanceURL {
