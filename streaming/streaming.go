@@ -515,3 +515,35 @@ func (s *defaultStreamer) refreshTSDtoken(c conf.Configuration, token string) (s
 	}
 	return extractTheClaimsOutOfTSDToken(response)
 }
+
+func fetchTimeFromNTP(ListOfNTPAddresses [4]string, terminated *bool, nowtime *time.Time) {
+	rand.Seed(time.Now().UnixMicro())
+	randomlySelectedNTPAddresses := ListOfNTPAddresses[rand.Intn(len(ListOfNTPAddresses))]
+	var err error
+	*nowtime, err = ntp.Time(randomlySelectedNTPAddresses)
+	if err == nil {
+		*terminated = true
+	}
+}
+
+func (s defaultStreamer) checkTSDTokenIsExpired(c conf.Configuration, ExpField float64) (bool, error) {
+	ListOfNTPAddresses := c.GetntpURL()
+	ExpirationTimeOfToken := time.Unix(int64(ExpField), 0).UTC() // ExpirationTimeOfToken in a Unix object
+	var nowtime time.Time
+	terminated := false
+	for nowtime.IsZero() {
+		if terminated {
+			break
+		}
+		go fetchTimeFromNTP(ListOfNTPAddresses, &terminated, &nowtime)
+	}
+	nowtime = nowtime.UTC()
+	nowplusfive := nowtime.Add(5 * time.Minute)
+	//5 minutes before time of expiration, consider as expired
+	if nowplusfive.After(ExpirationTimeOfToken) {
+		return true, nil // have reached the expiration timepoint
+	} else {
+		return false, nil // have not reach the expiration timepoint
+	}
+
+}
