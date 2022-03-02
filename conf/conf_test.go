@@ -106,7 +106,6 @@ func TestNewConfigurationNonDefaultTSDbaseURL(t *testing.T) {
 	}
 }
 
-
 func TestNewConfigurationDefaultChunkSize(t *testing.T) {
 	configuration := NewConfiguration()
 	if configuration.GetChunkSize() != defaultChunkSize {
@@ -114,6 +113,13 @@ func TestNewConfigurationDefaultChunkSize(t *testing.T) {
 	}
 }
 
+func TestNewConfigurationDefaultntpbaseURL(t *testing.T) {
+	configuration := NewConfiguration()
+	if configuration.GetntpURL() != [4]string{
+		"no.pool.ntp.org", "0.pool.ntp.org", "1.pool.ntp.org", "2.pool.ntp.org"} {
+		t.Error()
+	}
+}
 func TestNewConfigurationNonDefaultChunkSize(t *testing.T) {
 	_ = os.Setenv("LEGA_COMMANDER_CHUNK_SIZE", "100")
 	configuration := NewConfiguration()

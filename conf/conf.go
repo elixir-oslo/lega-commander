@@ -32,6 +32,7 @@ type Configuration interface {
 	GetTSDURL() string
 	GetTSDserviceDownload() string
 	GetTSDURLDownload() string
+	GetntpURL() [4]string
 	GetCentralEGAUsername() string
 	GetCentralEGAPassword() string
 	GetLocalEGAInstanceURL() string
@@ -117,7 +118,9 @@ func (dc defaultConfiguration) GetTSDservice() string {
 	return defaultTSDService
 }
 
-
+func (dc defaultConfiguration) GetntpURL() [4]string {
+	return [4]string{"no.pool.ntp.org", "0.pool.ntp.org", "1.pool.ntp.org", "2.pool.ntp.org"}
+}
 
 func (dc defaultConfiguration) GetTSDserviceDownload() string {
 	return defaultTSDServiceDownload
