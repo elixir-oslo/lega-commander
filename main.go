@@ -226,13 +226,13 @@ func main() {
 				log.Fatal(aurora.Red(err))
 			}
 			for _, file := range *fileList {
-				err = streamer.Download(file.FileName)
+				err = streamer.Download(file.FileName, downloadingOptions.Straight)
 				if err != nil {
 					log.Fatal(aurora.Red(err))
 				}
 			}
 		} else {
-			err = streamer.Download(downloadingOptions.FileName)
+			err = streamer.Download(downloadingOptions.FileName, downloadingOptions.Straight)
 			if err != nil {
 				log.Fatal(aurora.Red(err))
 			}

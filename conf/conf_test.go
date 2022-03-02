@@ -70,6 +70,12 @@ func TestGetTSDservice(t *testing.T) {
 	}
 }
 
+func TestGetTSDservicedownload(t *testing.T) {
+	configuration := NewConfiguration()
+	if configuration.GetTSDserviceDownload() != "egaout" {
+		t.Error()
+	}
+}
 func TestNewConfigurationDefaultInstanceURL(t *testing.T) {
 	configuration := NewConfiguration()
 	if configuration.GetLocalEGAInstanceURL() != defaultInstanceURL {
@@ -140,8 +146,22 @@ func TestNewConfigurationGetTSDURL(t *testing.T) {
 	}
 }
 
+func TestNewConfigurationGetTSDURLdownload(t *testing.T) {
+	_ = os.Setenv("TSD_BASE_URL", "tsd_base2/")
 
+	_ = os.Setenv("TSD_PROJ_NAME", "tsd_project")
 
+	configuration := NewConfiguration()
+	if configuration.GetTSDURLDownload() != "tsd_base2/v1/tsd_project/egaout" {
+		t.Error()
+	}
+	_ = os.Unsetenv("TSD_PROJ_NAME")
+	// default value for project name should be set when the env.var is empty
+	configuration = NewConfiguration()
+	if configuration.GetTSDURLDownload() != "tsd_base2/v1/p969/egaout" {
+		t.Error()
+	}
+}
 func teardown() {
 	_ = os.Unsetenv("CENTRAL_EGA_USERNAME")
 	_ = os.Unsetenv("CENTRAL_EGA_PASSWORD")

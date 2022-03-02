@@ -13,6 +13,7 @@ import (
 
 const defaultInstanceURL = "https://ega.elixir.no"
 const defaultTSDFileAPIVersion = "v1"
+const defaultTSDServiceDownload = "egaout"
 const defaultTSDService = "ega"
 const defaultTSDProject = "p969"
 const defaultTSDfileAPIbaseURL = "https://api.tsd.usit.no"
@@ -29,6 +30,8 @@ type Configuration interface {
 	GetTSDProjectName() string
 	GetTSDservice() string
 	GetTSDURL() string
+	GetTSDserviceDownload() string
+	GetTSDURLDownload() string
 	GetCentralEGAUsername() string
 	GetCentralEGAPassword() string
 	GetLocalEGAInstanceURL() string
@@ -114,6 +117,18 @@ func (dc defaultConfiguration) GetTSDservice() string {
 	return defaultTSDService
 }
 
+
+
+func (dc defaultConfiguration) GetTSDserviceDownload() string {
+	return defaultTSDServiceDownload
+}
+
+func (dc defaultConfiguration) GetTSDURLDownload() string {
+	return dc.ConcatenateURLPartsToString(
+		[]string{
+			dc.GetTSDbaseURL(), dc.GetTSDAPIVersion(), dc.GetTSDProjectName(), dc.GetTSDserviceDownload()},
+	)
+}
 func (dc defaultConfiguration) GetChunkSize() int {
 	chunkSize := os.Getenv("LEGA_COMMANDER_CHUNK_SIZE")
 	if chunkSize == "" {
