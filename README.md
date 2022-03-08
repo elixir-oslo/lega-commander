@@ -71,7 +71,7 @@ lega-commander [inbox | outbox | resumables | upload | download] <args>
  upload:
   -f, --file=FILE or =FOLDER    File or folder to upload
   -r, --resume                  Resumes interrupted upload
-  -s, --straight                Upload the files without the proxy service;i.e. directly to tsd file api
+  -s, --straight                Upload the files without the proxy service;i.e. directly to tsd file api. This means the parts of the file are sent to tsd file api instead of sending them to proxy service and then proxy service forward them to tsd file api. So it would be one-part transferring instead of two-part transferring.
 
  download:
   -f, --file= FILE or =FOLDER   File or folder to download
