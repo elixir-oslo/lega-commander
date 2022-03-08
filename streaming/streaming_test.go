@@ -62,7 +62,7 @@ func setup() {
 type mockClient struct {
 }
 
-func (mockClient) DoRequest(method, url string, _ io.Reader, headers, params map[string]string, username, password string) (*http.Response, error) {
+func (mockClient) DoRequest(method, url string, _ io.Reader, headers, params map[string]string, _, _ string) (*http.Response, error) {
 	var response http.Response
 	if !strings.HasPrefix(headers["Proxy-Authorization"], "Bearer ") {
 		body := ioutil.NopCloser(strings.NewReader(""))
