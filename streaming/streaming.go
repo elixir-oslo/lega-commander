@@ -451,11 +451,6 @@ func (s *defaultStreamer) uploadFileWithoutProxy(file *os.File, stat os.FileInfo
 		bar.SetCurrent(int64(read)*(i-startChunk+1) + offset)
 	}
 	bar.SetCurrent(totalSize)
-	hashFunction := sha256.New()
-	_, err = io.Copy(hashFunction, file)
-	if err != nil {
-		return err
-	}
 	fmt.Println("assembling different parts of file together in order to make it! Duration varies based on filesize.")
 	response, err := s.client.DoRequest(http.MethodPatch,
 		streamurl,
