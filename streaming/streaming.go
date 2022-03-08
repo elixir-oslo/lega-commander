@@ -30,7 +30,7 @@ import (
 
 // Streamer interface provides methods for uploading and downloading files from LocalEGA instance.
 type Streamer interface {
-	Upload(path string, resume bool, straight bool) error
+	Upload(path string, resume, straight bool) error
 	uploadFolder(folder *os.File, resume bool, straight bool) error
 	uploadFile(file *os.File, stat os.FileInfo, uploadID *string, offset int64, startChunk int64) error
 	Download(fileName string) error
@@ -88,7 +88,7 @@ func NewStreamer(client *requests.Client, fileManager *files.FileManager, resuma
 }
 
 // Upload method uploads file or folder to LocalEGA.
-func (s defaultStreamer) Upload(path string, resume bool, straight bool) error {
+func (s defaultStreamer) Upload(path string, resume, straight bool) error {
 	file, err := os.Open(path)
 	if err != nil {
 		return err
