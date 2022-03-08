@@ -321,7 +321,7 @@ func fileExists(fileName string) bool {
 	return !info.IsDir()
 }
 
-func extractTheClaimsOutOfTSDToken(response *http.Response) (string, jwt.MapClaims, error) {
+func extractClaims(response *http.Response) (string, jwt.MapClaims, error) {
 	if response.StatusCode != 200 {
 		return "", nil, errors.New(response.Status)
 	}
@@ -362,7 +362,7 @@ func (s defaultStreamer) getTSDtoken(c conf.Configuration) (string, jwt.MapClaim
 	if err != nil {
 		return "", nil, err
 	}
-	return extractTheClaimsOutOfTSDToken(response)
+	return extractClaims(response)
 }
 
 func (s *defaultStreamer) uploadFileWithoutProxy(file *os.File, stat os.FileInfo, uploadID *string, offset, startChunk int64) error {
