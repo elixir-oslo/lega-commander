@@ -36,7 +36,7 @@ type Configuration interface {
 	GetChunkSize() int
 }
 
-func (dc defaultConfiguration) ConcatenateURLPartsToString(array []string) string {
+func (defaultConfiguration) ConcatenateURLPartsToString(array []string) string {
 	str := strings.Join(array, "/")
 	return str
 }
@@ -45,7 +45,7 @@ func (dc defaultConfiguration) ConcatenateURLPartsToString(array []string) strin
 type defaultConfiguration struct {
 }
 
-func (dc defaultConfiguration) GetCentralEGAUsername() string {
+func (defaultConfiguration) GetCentralEGAUsername() string {
 	centralEGAUsername := os.Getenv("CENTRAL_EGA_USERNAME")
 	if centralEGAUsername == "" {
 		log.Fatal(aurora.Red("CENTRAL_EGA_USERNAME environment variable is not set"))
@@ -53,7 +53,7 @@ func (dc defaultConfiguration) GetCentralEGAUsername() string {
 	return centralEGAUsername
 }
 
-func (dc defaultConfiguration) GetCentralEGAPassword() string {
+func (defaultConfiguration) GetCentralEGAPassword() string {
 	centralEGAPassword := os.Getenv("CENTRAL_EGA_PASSWORD")
 	if centralEGAPassword == "" {
 		log.Fatal(aurora.Red("CENTRAL_EGA_PASSWORD environment variable is not set"))
@@ -61,7 +61,7 @@ func (dc defaultConfiguration) GetCentralEGAPassword() string {
 	return centralEGAPassword
 }
 
-func (dc defaultConfiguration) GetLocalEGAInstanceURL() string {
+func (defaultConfiguration) GetLocalEGAInstanceURL() string {
 	localEGAInstanceURL := os.Getenv("LOCAL_EGA_INSTANCE_URL")
 	if localEGAInstanceURL == "" {
 		localEGAInstanceURL = defaultInstanceURL
@@ -72,7 +72,7 @@ func (dc defaultConfiguration) GetLocalEGAInstanceURL() string {
 	return localEGAInstanceURL
 }
 
-func (dc defaultConfiguration) GetElixirAAIToken() string {
+func (defaultConfiguration) GetElixirAAIToken() string {
 	elixirAAIToken := os.Getenv("ELIXIR_AAI_TOKEN")
 	if elixirAAIToken == "" {
 		log.Fatal(aurora.Red("ELIXIR_AAI_TOKEN environment variable is not set"))
@@ -87,7 +87,7 @@ func (dc defaultConfiguration) GetTSDURL() string {
 	)
 }
 
-func (dc defaultConfiguration) GetTSDbaseURL() string {
+func (defaultConfiguration) GetTSDbaseURL() string {
 	TSDbaseURL := os.Getenv("TSD_BASE_URL")
 	if TSDbaseURL == "" {
 		TSDbaseURL = defaultTSDfileAPIbaseURL
@@ -98,11 +98,11 @@ func (dc defaultConfiguration) GetTSDbaseURL() string {
 	return TSDbaseURL
 }
 
-func (dc defaultConfiguration) GetTSDAPIVersion() string {
+func (defaultConfiguration) GetTSDAPIVersion() string {
 	return defaultTSDFileAPIVersion
 }
 
-func (dc defaultConfiguration) GetTSDProjectName() string {
+func (defaultConfiguration) GetTSDProjectName() string {
 	tsdProject := os.Getenv("TSD_PROJ_NAME")
 	if tsdProject == "" {
 		tsdProject = defaultTSDProject
@@ -110,11 +110,11 @@ func (dc defaultConfiguration) GetTSDProjectName() string {
 	return tsdProject
 }
 
-func (dc defaultConfiguration) GetTSDservice() string {
+func (defaultConfiguration) GetTSDservice() string {
 	return defaultTSDService
 }
 
-func (dc defaultConfiguration) GetChunkSize() int {
+func (defaultConfiguration) GetChunkSize() int {
 	chunkSize := os.Getenv("LEGA_COMMANDER_CHUNK_SIZE")
 	if chunkSize == "" {
 		return defaultChunkSize
