@@ -52,7 +52,7 @@ Table below shows how there variables must be set:
 
 ## Usage
 
-> For the time being, all of **upload** and **download** commands **should** not run with `-s` argument.
+> For the time being, all of **upload** and **download** commands **should** not run with `-b` argument.
 ```
 $ lega-commander
 lega-commander [inbox | outbox | resumables | upload | download] <args>
@@ -71,7 +71,7 @@ lega-commander [inbox | outbox | resumables | upload | download] <args>
  upload:
   -f, --file=FILE or =FOLDER    File or folder to upload
   -r, --resume                  Resumes interrupted upload
-  -s, --straight                Upload the files without the proxy service;i.e. directly to tsd file api. This means the parts of the file are sent to tsd file api instead of sending them to proxy service and then proxy service forward them to tsd file api. So it would be one-part transferring instead of two-part transferring.
+  -b, --beta                    Upload the files without the proxy service;i.e. directly to tsd file api. This means the parts of the file are sent to tsd file api instead of sending them to proxy service and then proxy service forward them to tsd file api. So it would be one-part transferring instead of two-part transferring.
 
  download:
   -f, --file= FILE or =FOLDER   File or folder to download
