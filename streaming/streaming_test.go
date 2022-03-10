@@ -2,11 +2,6 @@ package streaming
 
 import (
 	"fmt"
-	"github.com/chzyer/test"
-	"github.com/elixir-oslo/lega-commander/files"
-	"github.com/elixir-oslo/lega-commander/requests"
-	"github.com/elixir-oslo/lega-commander/resuming"
-	"github.com/logrusorgru/aurora"
 	"io"
 	"io/ioutil"
 	"log"
@@ -14,6 +9,12 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/chzyer/test"
+	"github.com/elixir-oslo/lega-commander/files"
+	"github.com/elixir-oslo/lega-commander/requests"
+	"github.com/elixir-oslo/lega-commander/resuming"
+	aurora "github.com/logrusorgru/aurora/v3"
 )
 
 var uploader Streamer
@@ -43,7 +44,7 @@ func setup() {
 	if err != nil {
 		log.Fatal(aurora.Red(err))
 	}
-	uploader, err = NewStreamer(&client, &filesManager, &resumablesManager)
+	uploader, err = NewStreamer(&client, &filesManager, &resumablesManager, false)
 	if err != nil {
 		log.Fatal(aurora.Red(err))
 	}
@@ -61,7 +62,7 @@ func setup() {
 type mockClient struct {
 }
 
-func (mockClient) DoRequest(method, url string, _ io.Reader, headers, params map[string]string, username, password string) (*http.Response, error) {
+func (mockClient) DoRequest(method, url string, _ io.Reader, headers, params map[string]string, _, _ string) (*http.Response, error) {
 	var response http.Response
 	if !strings.HasPrefix(headers["Proxy-Authorization"], "Bearer ") {
 		body := ioutil.NopCloser(strings.NewReader(""))
@@ -122,28 +123,28 @@ func (mockClient) DoRequest(method, url string, _ io.Reader, headers, params map
 }
 
 func TestUploadedFileExists(t *testing.T) {
-	err := uploader.Upload(existingFile.Name(), false)
+	err := uploader.Upload(existingFile.Name(), false, false)
 	if err == nil {
 		t.Error()
 	}
 }
 
 func TestUploadFile(t *testing.T) {
-	err := uploader.Upload(file.Name(), false)
+	err := uploader.Upload(file.Name(), false, false)
 	if err != nil {
 		t.Error(err)
 	}
 }
 
 func TestUploadFolder(t *testing.T) {
-	err := uploader.Upload(dir, false)
+	err := uploader.Upload(dir, false, false)
 	if err == nil || !strings.HasSuffix(err.Error(), "not a Crypt4GH file") {
 		t.Error(err)
 	}
 }
 
 func TestDownloadFileRemoteDoesntExist(t *testing.T) {
-	err := uploader.Download("test.enc")
+	err := uploader.Download("notfoundfile.enc")
 	if err == nil || !strings.HasSuffix(err.Error(), "not found in the outbox.") {
 		t.Error(err)
 	}

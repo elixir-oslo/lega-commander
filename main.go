@@ -5,16 +5,17 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/elixir-oslo/lega-commander/files"
-	"github.com/elixir-oslo/lega-commander/resuming"
-	"github.com/elixir-oslo/lega-commander/streaming"
-	"github.com/jessevdk/go-flags"
-	"github.com/logrusorgru/aurora"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 	"text/tabwriter"
+
+	"github.com/elixir-oslo/lega-commander/files"
+	"github.com/elixir-oslo/lega-commander/resuming"
+	"github.com/elixir-oslo/lega-commander/streaming"
+	"github.com/jessevdk/go-flags"
+	aurora "github.com/logrusorgru/aurora/v3"
 )
 
 var (
@@ -53,12 +54,14 @@ var resumablesOptionsParser = flags.NewParser(&resumablesOptions, flags.None)
 var uploadingOptions struct {
 	FileName string `short:"f"  long:"file" description:"File or folder to upload" value-name:"FILE" required:"true"`
 	Resume   bool   `short:"r" long:"resume" description:"Resumes interrupted upload"`
+	Straight bool   `short:"b" long:"beta" description:"Upload the files without the proxy service;i.e. directly to tsd file api"`
 }
 
 var uploadingOptionsParser = flags.NewParser(&uploadingOptions, flags.None)
 
 var downloadingOptions struct {
 	FileName string `short:"f"  long:"file" description:"File to download\t[optional]"`
+	Straight bool   `short:"b" long:"beta" description:"download the files without the proxy service;i.e. directly from tsd file api"`
 }
 
 var downloadingOptionsParser = flags.NewParser(&downloadingOptions, flags.None)
@@ -199,11 +202,11 @@ func main() {
 		if err != nil {
 			log.Fatal(aurora.Red(err))
 		}
-		streamer, err := streaming.NewStreamer(nil, nil, nil)
+		streamer, err := streaming.NewStreamer(nil, nil, nil, uploadingOptions.Straight)
 		if err != nil {
 			log.Fatal(aurora.Red(err))
 		}
-		err = streamer.Upload(uploadingOptions.FileName, uploadingOptions.Resume)
+		err = streamer.Upload(uploadingOptions.FileName, uploadingOptions.Resume, uploadingOptions.Straight)
 		if err != nil {
 			log.Fatal(aurora.Red(err))
 		}
@@ -212,7 +215,7 @@ func main() {
 		if err != nil {
 			log.Fatal(aurora.Red(err))
 		}
-		streamer, err := streaming.NewStreamer(nil, nil, nil)
+		streamer, err := streaming.NewStreamer(nil, nil, nil, downloadingOptions.Straight)
 		if err != nil {
 			log.Fatal(aurora.Red(err))
 		}
