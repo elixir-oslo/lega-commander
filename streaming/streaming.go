@@ -330,7 +330,6 @@ func extractClaims(response *http.Response) (string, jwt.MapClaims, error) {
 		return "", nil, err
 	}
 
-	tsd_token := string(body)
 	var respjson ResponseJson
 	err = json.Unmarshal(body, &respjson)
 	if err != nil {
@@ -345,7 +344,7 @@ func extractClaims(response *http.Response) (string, jwt.MapClaims, error) {
 	jwt.ParseWithClaims(respjson.Token, claims, func(token *jwt.Token) (interface{}, error) {
 		return []byte(""), nil
 	})
-	return tsd_token, claims, nil
+	return respjson.Token, claims, nil
 }
 
 func (s defaultStreamer) getTSDtoken(c conf.Configuration) (string, jwt.MapClaims, error) {
