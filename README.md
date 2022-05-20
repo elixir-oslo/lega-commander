@@ -95,3 +95,6 @@ that contains c4gh files, we can use this example command:
 ```
 lega-commander upload  -f /path/to/a/folder/containing/c4gh/files
 ```
+### How it works
+The flowchart below shows how lega commander connects to the other components of project in order to **UPLOAD** the file/folder:
+![Flowchart of upload](flowchart_lega_commander.jpg)
