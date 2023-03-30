@@ -64,6 +64,7 @@ get_binaries() {
   case "$PLATFORM" in
     darwin/386) BINARIES="lega-commander" ;;
     darwin/amd64) BINARIES="lega-commander" ;;
+    darwin/arm64) BINARIES="lega-commander" ;;
     linux/386) BINARIES="lega-commander" ;;
     linux/amd64) BINARIES="lega-commander" ;;
     windows/386) BINARIES="lega-commander" ;;
