@@ -8,6 +8,13 @@ builds:
       - darwin
       - linux
       - windows
+    goarch:
+      - amd64
+      - arm
+      - arm64
+    goarm:
+      - 6
+      - 7
 
 archives:
   -
