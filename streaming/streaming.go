@@ -148,7 +148,8 @@ func (s defaultStreamer) uploadFile(file *os.File, stat os.FileInfo, uploadID *s
 	fileName := filepath.Base(file.Name())
 	filesList, err := s.fileManager.ListFiles(true)
 	if err != nil {
-		return err
+	       	fmt.Println("Could not read previous uploaded files, this is ok if it's your first upload")  
+//		return err
 	}
 	for _, uploadedFile := range *filesList {
 		if fileName == filepath.Base(uploadedFile.FileName) {
@@ -223,7 +224,7 @@ func (s defaultStreamer) uploadFile(file *os.File, stat os.FileInfo, uploadID *s
 		return err
 	}
 	checksum := hex.EncodeToString(hashFunction.Sum(nil))
-	fmt.Println("assembling different parts of file together in order to make it! Duration varies based on filesize.")
+	fmt.Println("Assembling the uploaded parts of the file together in order to build it! Duration varies based on filesize.")
 	response, err := s.client.DoRequest(http.MethodPatch,
 		configuration.GetLocalEGAInstanceURL()+"/stream/"+url.QueryEscape(fileName),
 		nil,
