@@ -30,6 +30,16 @@ type defaultFileManager struct {
 	client requests.Client
 }
 
+// Represents an error message to handle a missing or empty folder
+type FolderNotFoundError struct {
+    Msg string
+}
+
+// Returns the error message in FolderNotFoundError.
+func (e *FolderNotFoundError) Error() string {
+    return e.Msg
+}
+
 // NewFileManager constructs FileManager using requests.Client.
 func NewFileManager(client *requests.Client) (FileManager, error) {
 	fileManager := defaultFileManager{}
@@ -67,7 +77,7 @@ func (rm defaultFileManager) ListFiles(inbox bool) (*[]File, error) {
     		// Check if the response body contains the specific error message indicating
     		// that the folder is empty or doesn't exist yet.
     		if strings.Contains(string(body), `"tsdFiles" is null`) {
-    			return nil, errors.New("The user folder is empty or does not exist yet")
+    			return nil, &FolderNotFoundError{}
     		}
     		// If it's not an empty folder, it's a genuine authentication error.
     		return nil, errors.New("Authentication error")
