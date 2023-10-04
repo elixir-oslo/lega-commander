@@ -1,32 +1,40 @@
 release:
-  github:
-    owner: elixir-oslo
-    name: lega-commander
+    github:
+        owner: elixir-oslo
+        name: lega-commander
 
 builds:
-  - goos:
-      - darwin
-      - linux
-      - windows
-    goarch:
-      - amd64
-      - arm
-      - arm64
-    goarm:
-      - 6
-      - 7
+    - goos:
+          - darwin
+          - linux
+          - windows
+      goarch:
+          - amd64
+          - arm
+          - arm64
+      goarm:
+          - "6"
+          - "7"
 
 archives:
-  -
-    replacements:
-      amd64: x86_64
-      386: i386
+    - name_template: >-
+          {{- .Binary }}_
+          {{- title .Os }}_
+          {{- if eq .Arch "amd64" }}x86_64
+          {{- else if eq .Arch "386" }}i386
+          {{- else }}{{ .Arch }}{{ end }}
+          {{- if .Arm }}v{{ .Arm }}{{ end -}}
 
-    name_template: "{{ .Binary }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
+#  -
+#    replacements:
+#      amd64: x86_64
+#      386: i386
+#
+#    name_template: "{{ .Binary }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
 
 changelog:
-  sort: asc
-  filters:
-    exclude:
-      - '^docs:'
-      - '^test:'
+    sort: asc
+    filters:
+        exclude:
+            - '^docs:'
+            - '^test:'
