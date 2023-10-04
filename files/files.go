@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/buger/jsonparser"
 	"github.com/elixir-oslo/lega-commander/conf"
@@ -27,6 +28,16 @@ type FileManager interface {
 
 type defaultFileManager struct {
 	client requests.Client
+}
+
+// Represents an error message to handle a missing or empty folder
+type FolderNotFoundError struct {
+    Msg string
+}
+
+// Returns the error message in FolderNotFoundError.
+func (e *FolderNotFoundError) Error() string {
+    return e.Msg
 }
 
 // NewFileManager constructs FileManager using requests.Client.
@@ -58,8 +69,20 @@ func (rm defaultFileManager) ListFiles(inbox bool) (*[]File, error) {
 	if err != nil {
 		return nil, err
 	}
-	if response.StatusCode != 200 {
-		return nil, errors.New(response.Status)
+	if response.StatusCode == 403 {
+    		body, err := ioutil.ReadAll(response.Body)
+    		if err != nil {
+    			return nil, errors.New("Failed to read the server's response")
+    		}
+    		// Check if the response body contains the specific error message indicating
+    		// that the folder is empty or doesn't exist yet.
+    		if strings.Contains(string(body), `"tsdFiles" is null`) {
+    			return nil, &FolderNotFoundError{}
+    		}
+    		// If it's not an empty folder, it's a genuine authentication error.
+    		return nil, errors.New("Authentication error")
+    	} else if response.StatusCode != 200 {
+    	return nil, errors.New(response.Status)
 	}
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {

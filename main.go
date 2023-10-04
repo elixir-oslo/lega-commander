@@ -96,6 +96,11 @@ func main() {
 		if inboxOptions.List {
 			fileList, err := fileManager.ListFiles(true)
 			if err != nil {
+                    if _, ok := err.(*files.FolderNotFoundError); ok {
+                        log.Fatal(aurora.Red("Inbox Error: The user folder is empty or does not exist yet"))
+                    }
+                }
+			if err != nil {
 				log.Fatal(aurora.Red(err))
 			}
 			tw := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', tabwriter.TabIndent)
@@ -130,6 +135,11 @@ func main() {
 		}
 		if inboxOptions.List {
 			fileList, err := fileManager.ListFiles(false)
+			if err != nil {
+                    if _, ok := err.(*files.FolderNotFoundError); ok {
+                        log.Fatal(aurora.Red("Outbox Error: No data has been staged in the outbox yet"))
+                    }
+                }
 			if err != nil {
 				log.Fatal(aurora.Red(err))
 			}

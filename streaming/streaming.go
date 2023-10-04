@@ -146,18 +146,26 @@ func (s defaultStreamer) uploadFolder(folder *os.File, resume, straight bool) er
 
 func (s defaultStreamer) uploadFile(file *os.File, stat os.FileInfo, uploadID *string, offset, startChunk int64) error {
 	fileName := filepath.Base(file.Name())
+
+	// List user's files already in inbox to avoid accidental overwrites
 	filesList, err := s.fileManager.ListFiles(true)
 	if err != nil {
-		return err
-	}
-	for _, uploadedFile := range *filesList {
-		if fileName == filepath.Base(uploadedFile.FileName) {
-			return errors.New("File " + file.Name() + " is already uploaded. Please, remove it from the Inbox first: lega-commander files -d " + filepath.Base(uploadedFile.FileName))
+	       	fmt.Println("Could not read previous uploaded files, this is ok if it's your first upload")  
+//		return err
+	} else {
+		for _, uploadedFile := range *filesList {
+			if fileName == filepath.Base(uploadedFile.FileName) {
+				return errors.New("File " + file.Name() + " is already uploaded. Please, remove it from the Inbox first: lega-commander files -d " + filepath.Base(uploadedFile.FileName))
+			}
 		}
 	}
+
+	// Make sure the file to be uploaded is a crypt4gh encrypted file
 	if err = isCrypt4GHFile(file); err != nil {
 		return err
 	}
+
+
 	totalSize := stat.Size()
 	fmt.Println(aurora.Blue("Uploading file: " + file.Name() + " (" + strconv.FormatInt(totalSize, 10) + " bytes)"))
 	bar := pb.StartNew(100)
@@ -223,7 +231,7 @@ func (s defaultStreamer) uploadFile(file *os.File, stat os.FileInfo, uploadID *s
 		return err
 	}
 	checksum := hex.EncodeToString(hashFunction.Sum(nil))
-	fmt.Println("assembling different parts of file together in order to make it! Duration varies based on filesize.")
+	fmt.Println("Assembling the uploaded parts of the file together in order to build it! Duration varies based on filesize.")
 	response, err := s.client.DoRequest(http.MethodPatch,
 		configuration.GetLocalEGAInstanceURL()+"/stream/"+url.QueryEscape(fileName),
 		nil,
