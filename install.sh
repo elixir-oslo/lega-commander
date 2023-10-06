@@ -6,7 +6,7 @@ set -e
 usage() {
   this=$1
   cat <<EOF
-$this: download go binaries for elixir-olso/lega-commander
+$this: download go binaries for elixir-oslo/lega-commander
 
 Usage: $this [-b] bindir [-d] [tag]
   -b sets bindir or installation directory, Defaults to ./bin
