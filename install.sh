@@ -63,12 +63,12 @@ execute() {
 get_binaries() {
   case "$PLATFORM" in
     Darwin/386) BINARIES="lega-commander" ;;
-    Darwin/amd64) BINARIES="lega-commander" ;;
+    Darwin/x86_64) BINARIES="lega-commander" ;;
     Darwin/arm64) BINARIES="lega-commander" ;;
     Linux/386) BINARIES="lega-commander" ;;
-    Linux/amd64) BINARIES="lega-commander" ;;
+    Linux/x86_64) BINARIES="lega-commander" ;;
     Windows/386) BINARIES="lega-commander" ;;
-    Windows/amd64) BINARIES="lega-commander" ;;
+    Windows/x86_64) BINARIES="lega-commander" ;;
     *)
     log_crit "platform $PLATFORM is not supported. Make sure this script is up-to-date and file request at https://github.com/${PREFIX}/issues/new"
     exit 1
