@@ -204,7 +204,7 @@ func (s defaultStreamer) uploadFile(file *os.File, stat os.FileInfo, uploadID *s
 			return err
 		}
 		if response.StatusCode != 200 {
-			//	return errors.New(response.Status)
+			return errors.New(response.Status)
 		}
 		body, err := ioutil.ReadAll(response.Body)
 		if err != nil {
