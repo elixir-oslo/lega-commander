@@ -150,8 +150,8 @@ func (s defaultStreamer) uploadFile(file *os.File, stat os.FileInfo, uploadID *s
 	// List user's files already in inbox to avoid accidental overwrites
 	filesList, err := s.fileManager.ListFiles(true)
 	if err != nil {
-	       	fmt.Println("Could not read previous uploaded files, this is ok if it's your first upload")  
-//		return err
+		fmt.Println("Could not read previous uploaded files, this is ok if it's your first upload")
+		//		return err
 	} else {
 		for _, uploadedFile := range *filesList {
 			if fileName == filepath.Base(uploadedFile.FileName) {
@@ -164,7 +164,6 @@ func (s defaultStreamer) uploadFile(file *os.File, stat os.FileInfo, uploadID *s
 	if err = isCrypt4GHFile(file); err != nil {
 		return err
 	}
-
 
 	totalSize := stat.Size()
 	fmt.Println(aurora.Blue("Uploading file: " + file.Name() + " (" + strconv.FormatInt(totalSize, 10) + " bytes)"))
@@ -205,7 +204,7 @@ func (s defaultStreamer) uploadFile(file *os.File, stat os.FileInfo, uploadID *s
 			return err
 		}
 		if response.StatusCode != 200 {
-			return errors.New(response.Status)
+			//	return errors.New(response.Status)
 		}
 		body, err := ioutil.ReadAll(response.Body)
 		if err != nil {
@@ -224,6 +223,11 @@ func (s defaultStreamer) uploadFile(file *os.File, stat os.FileInfo, uploadID *s
 		}
 		bar.SetCurrent(int64(read)*(i-startChunk+1) + offset)
 	}
+	file, err = os.Open(file.Name())
+	if err != nil {
+		return err
+	}
+	defer file.Close()
 	bar.SetCurrent(totalSize)
 	hashFunction := sha256.New()
 	_, err = io.Copy(hashFunction, file)
