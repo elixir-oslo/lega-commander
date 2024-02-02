@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"bytes"
 
 	"github.com/chzyer/test"
 	"github.com/elixir-oslo/lega-commander/files"
@@ -120,6 +121,64 @@ func (mockClient) DoRequest(method, url string, _ io.Reader, headers, params map
 		}
 	}
 	return nil, nil
+}
+
+
+type mockFileClient struct {
+    mockClient              // Embeded the existing mockClient
+    uploadedFiles map[string][]byte // In-memory storage for uploaded file content
+}
+
+func newMockFileClient() *mockFileClient {
+    return &mockFileClient{
+        mockClient:    mockClient{},
+        uploadedFiles: make(map[string][]byte),
+    }
+}
+
+func (m *mockFileClient) DoRequest(method, url string, body io.Reader, headers, params map[string]string, _, _ string) (*http.Response, error) {
+
+    if response, err := m.mockClient.DoRequest(method, url, body, headers, params, "", ""); err == nil && response.StatusCode != 500 {
+        return response, nil
+    }
+
+    // Handle file upload
+    if method == "POST" || method == "PATCH" {
+        fileName := params["fileName"]
+        if fileName != "" {
+            content, err := ioutil.ReadAll(body)
+            if err != nil {
+                return nil, err
+            }
+            m.uploadedFiles[fileName] = content
+            return &http.Response{
+                StatusCode: 200,
+                Body:       ioutil.NopCloser(strings.NewReader(fmt.Sprintf(`{"message":"%s uploaded successfully"}`, fileName))),
+            }, nil
+        }
+    }
+
+    // Handle file download
+    if method == "GET" {
+        fileName := params["fileName"]
+        if content, exists := m.uploadedFiles[fileName]; exists {
+            return &http.Response{
+                StatusCode: 200,
+                Body:       ioutil.NopCloser(bytes.NewReader(content)),
+            }, nil
+        } else {
+            return &http.Response{
+                StatusCode: 404,
+                Body:       ioutil.NopCloser(strings.NewReader(`{"error":"File not found"}`)),
+            }, nil
+        }
+    }
+
+    // Return a generic error
+    return &http.Response{
+        StatusCode: 500,
+        Body:       ioutil.NopCloser(strings.NewReader(`{"error":"Unhandled method or route"}`)),
+    }, nil
 }
 
 func TestUploadedFileExists(t *testing.T) {
