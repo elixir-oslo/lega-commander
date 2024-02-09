@@ -172,6 +172,7 @@ func (s defaultStreamer) uploadFile(file *os.File, stat os.FileInfo, uploadID *s
 	bar.SetCurrent(offset)
 	bar.Start()
 	configuration := conf.NewConfiguration()
+	hashFunction := sha256.New()
 	_, err = file.Seek(offset, 0)
 	if err != nil {
 		return err
@@ -186,6 +187,7 @@ func (s defaultStreamer) uploadFile(file *os.File, stat os.FileInfo, uploadID *s
 			break
 		}
 		chunk := buffer[:read]
+		hashFunction.Write(chunk)
 		sum := md5.Sum(chunk)
 		params := map[string]string{
 			"chunk": strconv.FormatInt(i, 10),
@@ -223,17 +225,7 @@ func (s defaultStreamer) uploadFile(file *os.File, stat os.FileInfo, uploadID *s
 		}
 		bar.SetCurrent(int64(read)*(i-startChunk+1) + offset)
 	}
-	file, err = os.Open(file.Name())
-	if err != nil {
-		return err
-	}
-	defer file.Close()
 	bar.SetCurrent(totalSize)
-	hashFunction := sha256.New()
-	_, err = io.Copy(hashFunction, file)
-	if err != nil {
-		return err
-	}
 	checksum := hex.EncodeToString(hashFunction.Sum(nil))
 	fmt.Println("Assembling the uploaded parts of the file together in order to build it! Duration varies based on filesize.")
 	response, err := s.client.DoRequest(http.MethodPatch,
