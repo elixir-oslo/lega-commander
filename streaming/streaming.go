@@ -19,13 +19,13 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/cheggaaa/pb/v3"
-	"github.com/elixir-oslo/crypt4gh/model/headers"
 	"github.com/elixir-oslo/lega-commander/conf"
 	"github.com/elixir-oslo/lega-commander/files"
 	"github.com/elixir-oslo/lega-commander/requests"
 	"github.com/elixir-oslo/lega-commander/resuming"
 	"github.com/golang-jwt/jwt"
 	aurora "github.com/logrusorgru/aurora/v3"
+	"github.com/neicnordic/crypt4gh/model/headers"
 )
 
 // Streamer interface provides methods for uploading and downloading files from LocalEGA instance.
