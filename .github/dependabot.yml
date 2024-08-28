@@ -8,10 +8,6 @@ updates:
 
   - package-ecosystem: gomod
     directory: "/"
-    groups:
-      all-modules:
-        patterns:
-          - "*"
     schedule:
       interval: "weekly"
       day: "wednesday"
