@@ -29,6 +29,9 @@ jobs:
                       dep ensure
                   fi
 
+            - name: Clean up go.mod and go.sum
+              run: go mod tidy
+
             - name: Reset repository to a clean state
               run: git reset --hard HEAD
 
