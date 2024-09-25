@@ -32,7 +32,9 @@ jobs:
                   fi
 
             - name: Clean up go.mod and go.sum
-              run: go mod tidy
+              run: |
+                  go get -v -t -d ./...
+                  go mod tidy
 
             - name: Reset repository to a clean state
               run: git reset --hard HEAD
