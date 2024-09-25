@@ -31,6 +31,15 @@ jobs:
                       dep ensure
                   fi
 
+            - name: Tidy go.mod for all target platforms
+              run: |
+                  GOOS=linux GOARCH=arm go mod tidy
+                  GOOS=darwin GOARCH=amd64 go mod tidy
+                  GOOS=darwin GOARCH=arm64 go mod tidy
+                  GOOS=linux GOARCH=amd64 go mod tidy
+                  GOOS=windows GOARCH=amd64 go mod tidy
+                  GOOS=windows GOARCH=arm64 go mod tidy
+
             - name: Clean up go.mod and go.sum
               run: go mod tidy
 
