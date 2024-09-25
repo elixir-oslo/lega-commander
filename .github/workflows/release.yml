@@ -1,9 +1,11 @@
 name: Release
 
 on:
-    push:
-        tags:
-            - 'v*'
+  push:
+    branches:
+      - ci-tests
+    tags:
+      - 'v*'
 
 jobs:
     goreleaser:
