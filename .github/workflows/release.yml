@@ -31,12 +31,13 @@ jobs:
                       dep ensure
                   fi
 
-            - name: Fetch dependencies for darwin_arm64
-              run: |
-                GOOS=darwin GOARCH=arm64 go get -v -t -d ./...
-
             - name: Clean up go.mod and go.sum
               run: go mod tidy
+
+            - name: Fetch dependencies and tidy for linux_arm_6
+              run: |
+                GOOS=linux GOARCH=arm GOARM=6 go mod tidy
+                GOOS=linux GOARCH=arm GOARM=6 go get -v -t -d ./...
 
             - name: Reset repository to a clean state
               run: git reset --hard HEAD
