@@ -32,9 +32,10 @@ jobs:
               run: git reset --hard HEAD
 
             - name: Run GoReleaser
-              uses: goreleaser/goreleaser-action@v5
+              uses: goreleaser/goreleaser-action@v6
               with:
-                  version: latest
+                  distribution: goreleaser
+                  version: "~> v2"
                   args: release --clean
                   #                  key: ${{ secrets.YOUR_PRIVATE_KEY }}
               env:
