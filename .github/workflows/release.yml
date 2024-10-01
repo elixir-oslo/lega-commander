@@ -1,45 +1,33 @@
 name: Release
 
 on:
-    push:
-        tags:
-            - 'v*'
+  push:
+    tags:
+      - 'v*'
 
 jobs:
-    goreleaser:
-        runs-on: ubuntu-latest
-        steps:
+  goreleaser:
+    runs-on: ubuntu-latest
+    steps:
 
-            - name: Set up Go 1.22
-              uses: actions/setup-go@v4
-              with:
-                  go-version: 1.22
-              id: go
+      - name: Set up Go 1.22
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.22
+        id: go
 
-            - name: Check out code into the Go module directory
-              uses: actions/checkout@v4
-              with:
-                fetch-depth: 0
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-            - name: Get dependencies
-              run: |
-                  go get -v -t -d ./...
-                  if [ -f Gopkg.toml ]; then
-                      curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-                      dep ensure
-                  fi
+      - name: Clean up go.mod and go.sum
+        run: go mod tidy
 
-            - name: Clean up go.mod and go.sum
-              run: go mod tidy
-
-            - name: Reset repository to a clean state
-              run: git reset --hard HEAD
-
-            - name: Run GoReleaser
-              uses: goreleaser/goreleaser-action@v5
-              with:
-                  version: latest
-                  args: release --clean
-                  #                  key: ${{ secrets.YOUR_PRIVATE_KEY }}
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: latest
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
