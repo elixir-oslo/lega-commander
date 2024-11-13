@@ -1,3 +1,9 @@
+# Notice:
+# The work in this repo is continued in a new mono repo here: https://github.com/ELIXIR-NO/FEGA-Norway
+# Direct link inside mono repo: https://github.com/ELIXIR-NO/FEGA-Norway/tree/main/cli/lega-commander
+
+
+
 # lega-commander
 [![Build Status](https://github.com/elixir-oslo/lega-commander/workflows/Go/badge.svg)](https://github.com/elixir-oslo/lega-commander/actions)
 [![GoDoc](https://godoc.org/github.com/elixir-oslo/lega-commander?status.svg)](https://pkg.go.dev/github.com/elixir-oslo/lega-commander?tab=subdirectories)
