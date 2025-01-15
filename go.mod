@@ -11,7 +11,7 @@ require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/logrusorgru/aurora/v3 v3.0.0
-	github.com/neicnordic/crypt4gh v1.12.0
+	github.com/neicnordic/crypt4gh v1.13.0
 )
 
 require (
@@ -24,6 +24,6 @@ require (
 	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
-	golang.org/x/crypto v0.23.0 // indirect
-	golang.org/x/sys v0.21.0 // indirect
+	golang.org/x/crypto v0.32.0 // indirect
+	golang.org/x/sys v0.29.0 // indirect
 )
