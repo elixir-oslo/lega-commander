@@ -6,6 +6,10 @@
 [![codecov](https://codecov.io/gh/elixir-oslo/lega-commander/branch/master/graph/badge.svg)](https://codecov.io/gh/elixir-oslo/lega-commander)
 [![DeepSource](https://deepsource.io/gh/elixir-oslo/lega-commander.svg/?label=active+issues&show_trend=true)](https://deepsource.io/gh/elixir-oslo/lega-commander/?ref=repository-badge)
 
+# Notice:
+# The work in this repo is continued in a new mono repo here: https://github.com/ELIXIR-NO/FEGA-Norway
+# Direct link inside mono repo: https://github.com/ELIXIR-NO/FEGA-Norway/tree/main/cli/lega-commander
+
 ## Installation / Update
 
 ### Linux
